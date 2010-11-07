@@ -44,13 +44,19 @@ public class FileSender {
 
 
             while ( (len = file_input.read(buf)) > 0 ) {
+                byte[] sendBuffer = new byte[len + 28];
+
                 currentChunk.SetOffset(fileOffset);
                 currentChunk.SetLength(len);
                 currentChunk.SetChunk(buf, len);
+                System.out.println("Sending chunk with hash: " + currentChunk.GetHashString());
+                System.arraycopy(currentChunk.IntToByteArray(currentChunk.GetOffset()), 0, sendBuffer, 0, 4);
+                System.arraycopy(currentChunk.IntToByteArray(currentChunk.GetLength()), 0, sendBuffer, 4, 4);
+                System.arraycopy(currentChunk.GetHash(), 0, sendBuffer, 8, currentChunk.GetHash().length);
+                System.arraycopy(currentChunk.chunk, 0, sendBuffer, 28, currentChunk.GetLength());
 
-                System.out.println("Sending chunk with hash: " + currentChunk.GetHash());
                 DatagramPacket sendPacket =
-                    new DatagramPacket(buf, len, IPAddress, 9876);
+                    new DatagramPacket(sendBuffer, len + 28, IPAddress, 9876);
 
                 clientSocket.send(sendPacket);
             }

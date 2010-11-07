@@ -3,6 +3,8 @@
  * and open the template in the editor.
  */
 
+package p2pclient;
+
 import java.io.*;
 import java.net.*;
 
@@ -17,7 +19,6 @@ public class FileReceiver {
         short RECEIVER_SOCKET = 9876;
         int BUFFER_SIZE = 1024;
 
-        System.out.println("What the bung");
         try {
             DatagramSocket receiverSocket = new DatagramSocket(RECEIVER_SOCKET);
 
@@ -41,7 +42,6 @@ public class FileReceiver {
                 ProcessPacket(myData, length);
 
                 System.out.println("Received packet from " + IPAddress + ":" + port);
-                System.out.println("This is our data: " + receivePacket.toString());
             }
         } catch (SocketException ex) {
             System.out.println("UDP port unavailable");
@@ -70,10 +70,33 @@ public class FileReceiver {
 
     private static void ProcessPacket( byte[] data, int length ) {
         String myString = new String(data);
+        FileChunk recvChunk = new FileChunk();
+
+        System.out.println("Received data of length " + length);
         System.out.println("Received: " + myString);
-        String tempFilename = "filename.tmp.sha1hash";
-        int dataLength = 10;
-        byte[] dataToWrite = data;
+        String tempFilename = "ReceivedFile.tmp.";
+        byte[] temp = new byte[4];
+        byte[] dataHash = new byte[20];
+        int expectedDataLength;
+        int dataOffset;
+        int dataLength = length - 28;
+        recvChunk.SetOffset(recvChunk.ByteArrayToInt(data));
+        System.arraycopy(data, 0, temp, 0, 4);
+        recvChunk.SetOffset(recvChunk.ByteArrayToInt(temp));
+        System.arraycopy(data, 4, temp, 0, 4);
+        recvChunk.SetLength(recvChunk.ByteArrayToInt(temp));
+        System.arraycopy(data, 8, dataHash, 0, dataHash.length);
+
+        System.out.println("Received data length: " + dataLength + " vs expected " + recvChunk.GetLength());
+        System.out.println("Data offset: " + recvChunk.GetOffset());
+        System.out.println("Hash: " + recvChunk.ConvertToHex(dataHash));
+
+        byte[] dataToWrite = new byte[length-28];
+        System.arraycopy(data, 28, dataToWrite, 0, dataLength);
+
+        recvChunk.SetChunk(dataToWrite, dataLength);
+
+        tempFilename = tempFilename.concat(recvChunk.GetHashString());
 
         WriteTemporaryFile(tempFilename, dataToWrite, dataLength);
     }

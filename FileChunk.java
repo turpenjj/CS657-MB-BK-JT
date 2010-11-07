@@ -15,7 +15,7 @@ public class FileChunk {
     int offsetIntoFile;
     int chunkLength;
     byte[] chunk;
-    String sha1Hash;
+    static byte[] sha1Hash = new byte[40];
 
     public void SetOffset(int offset) {
         offsetIntoFile = offset;
@@ -38,15 +38,34 @@ public class FileChunk {
         CalcSha1Hash();
     }
 
-    public String GetHash() {
-        return sha1Hash.toString();
+    public byte[] GetHash() {
+        return sha1Hash;
+    }
+
+    public String GetHashString() {
+        return ConvertToHex(sha1Hash);
     }
 
     private void CalcSha1Hash() {
-        sha1Hash = SHA1(chunk); //"abcdabed12436812bc081234567890abcdef6542";
+        sha1Hash = SHA1(chunk);
     }
 
-    private static String ConvertToHex(byte[] data) {
+    public byte[] IntToByteArray(int value) {
+        return new byte[] {
+            (byte)(value >>> 24),
+            (byte)(value >>> 16),
+            (byte)(value >>> 8),
+            (byte)(value)};
+    }
+
+    public int ByteArrayToInt(byte[] b) {
+        return (b[0] << 24)
+                + ((b[1] & 0xFF) << 16)
+                + ((b[2] & 0xFF) << 8)
+                + (b[3] & 0xFF);
+    }
+
+    public static String ConvertToHex(byte[] data) {
         StringBuffer buf = new StringBuffer();
         
         for ( int i = 0; i < data.length; i++ ) {
@@ -64,18 +83,16 @@ public class FileChunk {
         return buf.toString();
     }
 
-    private static String SHA1 (byte[] toHash) {
-        byte[] sha1hash = new byte[40];
-
+    private static byte[] SHA1 (byte[] toHash) {
         try {
             MessageDigest md;
             md = MessageDigest.getInstance("SHA-1");
 
             md.update(toHash, 0, toHash.length);
-            sha1hash = md.digest();
+            sha1Hash = md.digest();
         } catch (NoSuchAlgorithmException e) {
             System.out.println("Trouble, no SHA1 algorithm");
         }
-        return ConvertToHex(sha1hash);
+        return sha1Hash;
     }
 }
