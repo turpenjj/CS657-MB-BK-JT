@@ -10,7 +10,7 @@ package p2pclient;
  * @author Matt
  */
 public class Tracker {
-    ChunkHeader chunkHeader;
+    PacketHeader chunkHeader;
 
 
 }

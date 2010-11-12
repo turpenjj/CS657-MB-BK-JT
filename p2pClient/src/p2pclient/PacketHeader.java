@@ -9,9 +9,10 @@ package p2pclient;
  *
  * @author Matt
  */
-public class ChunkHeader {
+public class PacketHeader {
     int sessionID;
     PacketType packetType;
     int totalSize;
     int offset;
+
 }

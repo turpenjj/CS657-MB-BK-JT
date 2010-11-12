@@ -10,6 +10,6 @@ package p2pclient;
  * @author Matt
  */
 public class TrackerQueryResponse {
-    ChunkHeader ch;
+    PacketHeader ch;
     PeerClient[] clientList;
 }

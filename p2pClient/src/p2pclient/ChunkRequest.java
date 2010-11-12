@@ -9,8 +9,9 @@ package p2pclient;
  *
  * @author Matt
  */
-public class TrackerQuery {
+public class ChunkRequest {
     PacketHeader ch;
     String filename;
+    int chunkNumber;
 
 }
