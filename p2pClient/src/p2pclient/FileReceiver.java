@@ -70,24 +70,24 @@ public class FileReceiver extends Util {
 
     private static void ProcessPacket( byte[] data, int length ) {
         String myString = new String(data);
-        FileChunk recvChunk = new FileChunk();
 
 //        System.out.println("Received: " + myString);
         String tempFilename = "ReceivedFile.tmp.";
+        FileChunk recvChunk = new FileChunk(tempFilename, 0);
         byte[] temp = new byte[4];
         byte[] dataHash = new byte[20];
         int dataLength = length - 28;
-        recvChunk.SetOffset(ByteArrayToInt(data));
-        System.arraycopy(data, 0, temp, 0, 4);
-        recvChunk.SetOffset(ByteArrayToInt(temp));
-        System.arraycopy(data, 4, temp, 0, 4);
-        recvChunk.SetLength(ByteArrayToInt(temp));
-        System.arraycopy(data, 8, dataHash, 0, dataHash.length);
+//        recvChunk.SetOffset(ByteArrayToInt(data));
+//        System.arraycopy(data, 0, temp, 0, 4);
+//        recvChunk.SetOffset(ByteArrayToInt(temp));
+//        System.arraycopy(data, 4, temp, 0, 4);
+//        recvChunk.SetLength(ByteArrayToInt(temp));
+//        System.arraycopy(data, 8, dataHash, 0, dataHash.length);
 
         System.out.println("buffer length: " + data.length + " vs " + length);
         System.out.println("Received data: " + recvChunk.ConvertToHex(data));
-        System.out.println("Received data length: " + dataLength + " vs expected " + recvChunk.GetLength());
-        System.out.println("Data offset: " + recvChunk.GetOffset());
+//        System.out.println("Received data length: " + dataLength + " vs expected " + recvChunk.GetLength());
+//        System.out.println("Data offset: " + recvChunk.GetOffset());
         System.out.println("Hash: " + recvChunk.ConvertToHex(dataHash));
 
         byte[] dataToWrite = new byte[dataLength];

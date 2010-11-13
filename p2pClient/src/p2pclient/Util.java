@@ -49,7 +49,7 @@ public class Util {
         try {
            DatagramSocket sendingSocket = new DatagramSocket();
            InetAddress IPAddress = InetAddress.getByAddress(IntToByteArray(peer.clientIp));
-           int port = peer.requestPort;
+           int port = peer.listeningPort;
 
            DatagramPacket packetToSend = new DatagramPacket(payload, payload.length, IPAddress, port);
 

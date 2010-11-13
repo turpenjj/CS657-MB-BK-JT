@@ -12,25 +12,30 @@ import java.security.NoSuchAlgorithmException;
  * @author Matt
  */
 public class FileChunk {
-    int offsetIntoFile;
-    int chunkLength;
+    String filename;
+    int chunkNumber;
     byte[] chunk;
     static byte[] sha1Hash = new byte[40];
 
-    public void SetOffset(int offset) {
-        offsetIntoFile = offset;
-    }
-    public int GetOffset() {
-        return offsetIntoFile;
+    FileChunk(String file, int chNumber) {
+        filename = file;
+        chunkNumber = chNumber;
     }
 
-    public void SetLength(int length) {
-        chunkLength = length;
-    }
-
-    public int GetLength() {
-        return chunkLength;
-    }
+//    public void SetOffset(int offset) {
+//        offsetIntoFile = offset;
+//    }
+//    public int GetOffset() {
+//        return offsetIntoFile;
+//    }
+//
+//    public void SetLength(int length) {
+//        chunkLength = length;
+//    }
+//
+//    public int GetLength() {
+//        return chunkLength;
+//    }
 
     public void SetChunk(byte[] data, int length) {
         chunk = new byte[length];

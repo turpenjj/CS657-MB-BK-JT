@@ -36,7 +36,7 @@ public class FileSender extends Util {
     
     private static void SendFile(String filename) {
         File file = new File(filename);
-        FileChunk currentChunk = new FileChunk();
+        FileChunk currentChunk = new FileChunk(filename, 0);
         
         try {
             FileInputStream file_input = new FileInputStream(file);
@@ -53,14 +53,14 @@ public class FileSender extends Util {
                 int lengthToSend = len + 28;
                 byte[] sendBuffer = new byte[lengthToSend];
 
-                currentChunk.SetOffset(fileOffset);
-                currentChunk.SetLength(len);
+//                currentChunk.SetOffset(fileOffset);
+//                currentChunk.SetLength(len);
                 currentChunk.SetChunk(buf, len);
                 System.out.println("Sending chunk with hash: " + currentChunk.GetHashString() + "and length: " + lengthToSend);
-                System.arraycopy(IntToByteArray(currentChunk.GetOffset()), 0, sendBuffer, 0, 4);
-                System.arraycopy(IntToByteArray(currentChunk.GetLength()), 0, sendBuffer, 4, 4);
+//                System.arraycopy(IntToByteArray(currentChunk.GetOffset()), 0, sendBuffer, 0, 4);
+//                System.arraycopy(IntToByteArray(currentChunk.GetLength()), 0, sendBuffer, 4, 4);
                 System.arraycopy(currentChunk.GetHash(), 0, sendBuffer, 8, currentChunk.GetHash().length);
-                System.arraycopy(currentChunk.chunk, 0, sendBuffer, 28, currentChunk.GetLength());
+//                System.arraycopy(currentChunk.chunk, 0, sendBuffer, 28, currentChunk.GetLength());
 
                 DatagramPacket sendPacket =
                     new DatagramPacket(sendBuffer, lengthToSend, IPAddress, 9876);

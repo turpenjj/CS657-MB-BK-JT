@@ -12,11 +12,11 @@ package p2pclient;
 public class Peer {
     String clientName;
     int clientIp;
-    int requestPort;
+    int listeningPort;
 
     Peer(String name, int ip, int port) {
         clientName = name;
         clientIp = ip;
-        requestPort = port;
+        listeningPort = port;
     }
 }

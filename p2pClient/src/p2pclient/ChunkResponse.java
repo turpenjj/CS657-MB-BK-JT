@@ -9,29 +9,14 @@ package p2pclient;
  *
  * @author Matt
  */
-public class ChunkListResponse extends Util {
+public class ChunkResponse extends Util {
     PacketHeader packetHeader;
-    String filename;
-    int[] chunkNumber;
     Peer peer;
+    FileChunk chunk;
+    String filename;
 
-    ChunkListResponse(Peer requestingPeer, String request) {
-        peer = requestingPeer;
-        filename = request;
-    }
-
-    /*
-     * Description:
-     *   Determines the available chunks for the requested file and returns the chunk List
-     *
-     * Returns:
-     *   int[] containing all chunks we have available to share
-     *   null if we don't have any chunks
-     */
-    public int[] GetChunkList() {
-        int[] chunkList = null;
-
-        return chunkList;
+    ChunkResponse(Peer requestingPeer, String requestedFilename, int chunkNumber) {
+        chunk = new FileChunk(requestedFilename, chunkNumber);
     }
 
     /*
@@ -39,7 +24,7 @@ public class ChunkListResponse extends Util {
      *   Gets a byte array representation of the request
      *
      * Returns:
-     *   the chunk list request as a byte array
+     *   the chunk as a byte array
      */
     public byte[] GetBytes() {
         int requestLength = filename.length() + 4; //filename + receiving port
@@ -53,7 +38,7 @@ public class ChunkListResponse extends Util {
 
     /*
      * Description:
-     *   Sends the chunk list to the peer who requested it
+     *   Sends the chunk to the peer who requested it
      *s
      * Returns:
      *   True if packet was sent
@@ -62,5 +47,4 @@ public class ChunkListResponse extends Util {
     public void Send() {
         SendPacket(peer, this.GetBytes());
     }
-
 }
