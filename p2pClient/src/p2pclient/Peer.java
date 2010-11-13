@@ -9,8 +9,14 @@ package p2pclient;
  *
  * @author Matt
  */
-public class PeerClient {
+public class Peer {
     String clientName;
     int clientIp;
-    short requestPort;
+    int requestPort;
+
+    Peer(String name, int ip, int port) {
+        clientName = name;
+        clientIp = ip;
+        requestPort = port;
+    }
 }

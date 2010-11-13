@@ -12,7 +12,7 @@ import java.net.*;
  *
  * @author Matt
  */
-public class FileReceiver {
+public class FileReceiver extends Util {
 
     public static void main (String[] args) throws Exception
     {
@@ -77,13 +77,15 @@ public class FileReceiver {
         byte[] temp = new byte[4];
         byte[] dataHash = new byte[20];
         int dataLength = length - 28;
-        recvChunk.SetOffset(recvChunk.ByteArrayToInt(data));
+        recvChunk.SetOffset(ByteArrayToInt(data));
         System.arraycopy(data, 0, temp, 0, 4);
-        recvChunk.SetOffset(recvChunk.ByteArrayToInt(temp));
+        recvChunk.SetOffset(ByteArrayToInt(temp));
         System.arraycopy(data, 4, temp, 0, 4);
-        recvChunk.SetLength(recvChunk.ByteArrayToInt(temp));
+        recvChunk.SetLength(ByteArrayToInt(temp));
         System.arraycopy(data, 8, dataHash, 0, dataHash.length);
 
+        System.out.println("buffer length: " + data.length + " vs " + length);
+        System.out.println("Received data: " + recvChunk.ConvertToHex(data));
         System.out.println("Received data length: " + dataLength + " vs expected " + recvChunk.GetLength());
         System.out.println("Data offset: " + recvChunk.GetOffset());
         System.out.println("Hash: " + recvChunk.ConvertToHex(dataHash));

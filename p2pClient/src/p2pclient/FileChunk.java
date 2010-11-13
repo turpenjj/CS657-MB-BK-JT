@@ -50,21 +50,6 @@ public class FileChunk {
         sha1Hash = SHA1(chunk);
     }
 
-    public byte[] IntToByteArray(int value) {
-        return new byte[] {
-            (byte)(value >>> 24),
-            (byte)(value >>> 16),
-            (byte)(value >>> 8),
-            (byte)(value)};
-    }
-
-    public int ByteArrayToInt(byte[] b) {
-        return (b[0] << 24)
-                + ((b[1] & 0xFF) << 16)
-                + ((b[2] & 0xFF) << 8)
-                + (b[3] & 0xFF);
-    }
-
     public static String ConvertToHex(byte[] data) {
         StringBuffer buf = new StringBuffer();
         

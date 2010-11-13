@@ -11,5 +11,5 @@ package p2pclient;
  */
 public class TrackerQueryResponse {
     PacketHeader ch;
-    PeerClient[] clientList;
+    Peer[] clientList;
 }

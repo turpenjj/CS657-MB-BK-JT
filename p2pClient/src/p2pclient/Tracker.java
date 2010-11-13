@@ -6,11 +6,12 @@
 package p2pclient;
 
 /**
+ * Description:
+ *  This class is the base class for the Tracker (file server).  It 
  *
  * @author Matt
  */
 public class Tracker {
-    PacketHeader chunkHeader;
 
 
 }

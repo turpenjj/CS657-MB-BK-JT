@@ -12,12 +12,18 @@ import java.net.*;
  *
  * @author Matt
  */
-public class FileSender {
+public class FileSender extends Util {
+    static RequestingClient myReq;
     public static void main(String args[]) throws Exception
     {
+        int peerIp = ByteArrayToInt(InetAddress.getByName("192.168.1.102").getAddress());
+
+        Peer myPeer = new Peer("Test", peerIp, 9876);
+        myReq = new RequestingClient(myPeer, "devlist.txt");
+
+        myReq.start();
         try {
             BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
-
             System.out.print("Enter File to send: ");
             String sentence = inFromUser.readLine();
             SendFile(sentence);
@@ -51,8 +57,8 @@ public class FileSender {
                 currentChunk.SetLength(len);
                 currentChunk.SetChunk(buf, len);
                 System.out.println("Sending chunk with hash: " + currentChunk.GetHashString() + "and length: " + lengthToSend);
-                System.arraycopy(currentChunk.IntToByteArray(currentChunk.GetOffset()), 0, sendBuffer, 0, 4);
-                System.arraycopy(currentChunk.IntToByteArray(currentChunk.GetLength()), 0, sendBuffer, 4, 4);
+                System.arraycopy(IntToByteArray(currentChunk.GetOffset()), 0, sendBuffer, 0, 4);
+                System.arraycopy(IntToByteArray(currentChunk.GetLength()), 0, sendBuffer, 4, 4);
                 System.arraycopy(currentChunk.GetHash(), 0, sendBuffer, 8, currentChunk.GetHash().length);
                 System.arraycopy(currentChunk.chunk, 0, sendBuffer, 28, currentChunk.GetLength());
 
