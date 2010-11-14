@@ -11,7 +11,7 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author Matt
  */
-public class FileChunk {
+public class FileChunk extends Util {
     ChunkInfo chunkInfo;
     byte[] chunk;
 
@@ -56,24 +56,6 @@ public class FileChunk {
 
     private void CalcSha1Hash() {
         chunkInfo.hash = SHA1(chunk);
-    }
-
-    public static String ConvertToHex(byte[] data) {
-        StringBuffer buf = new StringBuffer();
-        
-        for ( int i = 0; i < data.length; i++ ) {
-            int halfbyte =  (data[i] >>> 4) & 0x0F;
-            int two_halves = 0;
-            do {
-                if ( (0 <= halfbyte) && (halfbyte <= 9) ) {
-                    buf.append((char) ('0' + halfbyte));
-                } else {
-                    buf.append((char) ('a' + (halfbyte - 10)));
-                }
-                halfbyte = data[i] & 0x0F;
-            } while (two_halves++ < 1);
-        }
-        return buf.toString();
     }
 
     private byte[] SHA1 (byte[] toHash) {
