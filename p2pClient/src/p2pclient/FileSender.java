@@ -18,7 +18,6 @@ public class FileSender extends Util {
     public static void main(String args[]) throws Exception
     {
         int peerIp = ByteArrayToInt(InetAddress.getByName("192.168.1.100").getAddress());
-
         Peer myPeer = new Peer(peerIp, 9876);
         myReq = new RequestingClient(myPeer, "devlist.txt");
 //        myReq1 = new RequestingClient(myPeer, "devlis1t.txt");
