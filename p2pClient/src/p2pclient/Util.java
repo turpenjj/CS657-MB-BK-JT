@@ -6,6 +6,7 @@
 package p2pclient;
 import java.io.*;
 import java.net.*;
+import java.util.Calendar;
 
 /**
  *
@@ -29,6 +30,7 @@ public class Util {
         }
         return buf.toString();
     }
+
     public static byte[] IntToByteArray(int value) {
         return new byte[] {
             (byte)(value >>> 24),
@@ -111,26 +113,46 @@ public class Util {
         int[] rawPacketHeader;
         PacketHeader packetHeader;
 
-        do {
-            rawReceivedData = null;
-            bytesRead = ReceivePacket(peer, receivingPort, rawReceivedData);
-            if ( bytesRead < 16 ) {
-                return 0;
-            }
-            System.arraycopy(rawReceivedData, 0, tempArray, 0, 16);
-            rawPacketHeader = ByteArrayToIntArray(tempArray);
-            packetHeader = new PacketHeader(rawPacketHeader[0], rawPacketHeader[1], rawPacketHeader[2], rawPacketHeader[3]);
-
-            if ( sessionID == -1 ) {
-                sessionID = packetHeader.sessionID;
-                receivedData = new byte[packetHeader.totalSize];
-            } else if ( sessionID != packetHeader.sessionID ) {
-                System.out.println("Received packet for the wrong session");
-                return 0;
-            }
-            System.arraycopy(rawReceivedData, 16, receivedData, packetHeader.offset, bytesRead - 16);
-            totalBytesReceived += bytesRead - 16;
-        } while ( totalBytesReceived < packetHeader.totalSize ) ;
+//        do {
+//            rawReceivedData = null;
+//            bytesRead = ReceivePacket(peer, receivingPort, rawReceivedData);
+//            if ( bytesRead < 16 ) {
+//                return 0;
+//            }
+//            System.arraycopy(rawReceivedData, 0, tempArray, 0, 16);
+//            rawPacketHeader = ByteArrayToIntArray(tempArray);
+//            packetHeader = new PacketHeader(rawPacketHeader[0], rawPacketHeader[1], rawPacketHeader[2], rawPacketHeader[3]);
+//
+//            if ( sessionID == -1 ) {
+//                sessionID = packetHeader.sessionID;
+//                receivedData = new byte[packetHeader.totalSize];
+//            } else if ( sessionID != packetHeader.sessionID ) {
+//                System.out.println("Received packet for the wrong session");
+//                return 0;
+//            }
+//            System.arraycopy(rawReceivedData, 16, receivedData, packetHeader.offset, bytesRead - 16);
+//            totalBytesReceived += bytesRead - 16;
+//        } while ( totalBytesReceived < packetHeader.totalSize ) ;
         return totalBytesReceived;
+    }
+
+    /*
+     * Handles dividing a message and its data into individual packets and sending them to a peer.
+     */
+    public void SendCommunication(Peer peer, PacketHeader packetHeader, byte[] sendData) {
+        // create the sending socket
+        // loop through the data and call SendPacket() for each chunk
+    }
+
+    /*
+     * Creates and sends an individual packet out a socket.
+     */
+    private void SendPacket(DatagramSocket sendingSocket, PacketHeader packetHeader, byte[] packetData) {
+        // create the packet
+        // send the packet
+    }
+
+    public static long GetCurrentTime() {
+        return (Calendar.getInstance()).getTimeInMillis();
     }
 }
