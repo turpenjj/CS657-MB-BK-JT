@@ -25,6 +25,9 @@ public class Tracker extends Util implements Runnable {
     private int listeningPort;
     private TrackerRegistration registeredPeers;
     private TrackerTorrentRegistration registeredTorrents;
+    private PacketType[] acceptedPacketTypes = {
+        PacketType.TRACKER_QUERY, PacketType.TRACKER_REGISTRATION,
+        PacketType.TRACKER_TORRENT_REGISTRATION, PacketType.TRACKER_TORRENT_QUERY};
 
     Tracker(int listeningPort) {
         this.listeningPort = listeningPort;
@@ -38,19 +41,37 @@ public class Tracker extends Util implements Runnable {
     }
 
     public void run() {
+        Peer peer = null;
+        PacketType packetType = null;
+        int sessionID = 0;
+        byte[] messageData = null;
+
         System.out.println("Started a Tracker thread on port " + this.listeningPort);
 
-        /* Outline:
-         * Call ReceiveCommunication in a loop. Don't worry about timeouts. When a full message is received, call ProcessQuery().
-         */
+        this.messageReceiver = new MessageReceive(this.listeningPort, this.acceptedPacketTypes);
+
+        for (;;) {
+            if (this.messageReceiver.GetMessage(0, this.acceptedPacketTypes, peer, packetType, sessionID, messageData)) {
+                ProcessQuery(peer, packetType, sessionID, messageData);
+            } else {
+                try {
+                    Thread.sleep(100);
+                } catch ( InterruptedException e ) {}
+            }
+
+        }
     }
 
     /*
      * Dispositions a full message once it has been received. Makes use of other classes (TrackerQuery, TrackerQueryResponse, TrackerRegistration, TrackerTorrentRegistration as necessary).
      */
-    private void ProcessQuery(PacketHeader packetHeader, Peer peer) {
-        switch (packetHeader.packetType) {
+    private void ProcessQuery(Peer peer, PacketType packetType, int sessionID, byte[] messageData) {
+        switch (packetType) {
             case TRACKER_QUERY:
+                TrackerQuery trackerQuery = new TrackerQuery();
+                trackerQuery.ImportQuery(messageData);
+
+                
 
                 break;
 
@@ -63,8 +84,12 @@ public class Tracker extends Util implements Runnable {
 
                 break;
 
+            case TRACKER_TORRENT_QUERY:
+
+                break;
+
             default:
-                System.out.printf("Received an unsupported packetType (%d)\n", packetHeader.packetType);
+                System.out.println("Received an unsupported packetType " + packetType);
 
                 break;
         }

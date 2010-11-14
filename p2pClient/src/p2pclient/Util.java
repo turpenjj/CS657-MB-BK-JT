@@ -7,6 +7,7 @@ package p2pclient;
 import java.io.*;
 import java.net.*;
 import java.util.Calendar;
+import java.io.UnsupportedEncodingException;
 
 /**
  *
@@ -39,11 +40,82 @@ public class Util {
             (byte)(value)};
     }
 
+    public static int IntToByteArray(byte[] b, int index, int value) {
+        b[index + 0] = (byte)(value >>> 24);
+        b[index + 1] = (byte)(value >>> 16);
+        b[index + 2] = (byte)(value >>> 8);
+        b[index + 3] = (byte)(value >>> 0);
+
+        return index + 4;
+    }
+
     public static int ByteArrayToInt(byte[] b) {
         return (b[0] << 24)
                 + ((b[1] & 0xFF) << 16)
                 + ((b[2] & 0xFF) << 8)
                 + (b[3] & 0xFF);
+    }
+
+    public static int ByteArrayToInt(byte[] b, int startingIndex) {
+        return (((b[startingIndex + 0] & 0xFF) << 24) +
+                ((b[startingIndex + 1] & 0xFF) << 16) +
+                ((b[startingIndex + 2] & 0xFF) << 8) +
+                ((b[startingIndex + 3] & 0xFF) << 0));
+    }
+
+    /**
+     *
+     * @param b Byte array to extract a null-terminated ASCII string from
+     * @param startingIndex Index into byte array to start at
+     * @param nextIndex[out] Index into byte array for the first byte following
+     *      the string's null-terminator (single element array)
+     * @return Extracted string, null on failure
+     */
+    public static String ExtractNullTerminatedString(byte[] b, int startingIndex, int[] nextIndex) {
+        String string = null;
+        int i;
+
+        if (b.length < 1 || startingIndex < 0) {
+            return null;
+        }
+
+        for (i = startingIndex; i < b.length; i++) {
+            if (b[i] == '\0') {
+                break;
+            }
+        }
+
+        if (i == b.length) {
+            return null;
+        }
+
+        try {
+           string = new String(b, startingIndex, i - startingIndex, "US-ASCII");
+        } catch (UnsupportedEncodingException e) {
+            System.out.println("Received encoding exception " + e);
+            return null;
+        }
+        // move past the null-terminator
+        i++;
+        nextIndex[0] = i;
+
+        return string;
+    }
+
+    public static int InsertNullTerminatedString(byte[] b, int startingIndex, String string) {
+        byte[] s;
+
+        try {
+           s = string.getBytes("US-ASCII");
+        } catch (UnsupportedEncodingException e) {
+            System.out.println("Received encoding exception " + e);
+            return startingIndex;
+        }
+
+        System.arraycopy(s, 0, b, startingIndex, s.length);
+        b[s.length] = '\0';
+
+        return startingIndex + s.length + 1;
     }
 
     public static int[] ByteArrayToIntArray(byte[] b) {
@@ -104,15 +176,15 @@ public class Util {
         return lengthReceived;
     }
 
-    public static int ReceiveCommunication(Peer peer, int receivingPort, byte[] receivedData) {
-        int bytesRead;
-        int totalBytesReceived = 0;
-        int sessionID = -1;
-        byte[] rawReceivedData;
-        byte[] tempArray = new byte[16];
-        int[] rawPacketHeader;
-        PacketHeader packetHeader;
-
+//    public static int ReceiveCommunication(Peer peer, int receivingPort, byte[] receivedData) {
+//        int bytesRead;
+//        int totalBytesReceived = 0;
+//        int sessionID = -1;
+//        byte[] rawReceivedData;
+//        byte[] tempArray = new byte[16];
+//        int[] rawPacketHeader;
+//        PacketHeader packetHeader;
+//
 //        do {
 //            rawReceivedData = null;
 //            bytesRead = ReceivePacket(peer, receivingPort, rawReceivedData);
@@ -133,13 +205,13 @@ public class Util {
 //            System.arraycopy(rawReceivedData, 16, receivedData, packetHeader.offset, bytesRead - 16);
 //            totalBytesReceived += bytesRead - 16;
 //        } while ( totalBytesReceived < packetHeader.totalSize ) ;
-        return totalBytesReceived;
-    }
+//        return totalBytesReceived;
+//    }
 
     /*
      * Handles dividing a message and its data into individual packets and sending them to a peer.
      */
-    public void SendCommunication(Peer peer, PacketType packetType, int sessionID, byte[] sendData) {
+    public void SendCommunication(Peer peer, PacketHeader packetHeader, byte[] sendData) {
         // create the sending socket
         // loop through the data and call SendPacket() for each chunk
     }
