@@ -18,6 +18,9 @@ public class MessageReceive extends Util implements Runnable {
     private PacketType[] acceptedPacketTypes;
     private int SOCKET_TIMEOUT_MS = 15000;
     private int MAX_PACKET_SIZE = 1500;
+    private int BASE_SOCKET_PORT = 2000;
+    private int MAX_PORT_NUMBER = 65535;
+    public int listeningPort;
 
     MessageReceive(int listeningPort, PacketType[] acceptedPacketTypes) {
         this.acceptedPacketTypes = acceptedPacketTypes;
@@ -26,6 +29,21 @@ public class MessageReceive extends Util implements Runnable {
             this.listeningSocket.setSoTimeout(this.SOCKET_TIMEOUT_MS);
         } catch ( IOException e ) {
             System.out.println("Receieved socket error: " + e);
+        }
+    }
+
+    MessageReceive(PacketType[] acceptedPacketTypes) {
+        this.acceptedPacketTypes = acceptedPacketTypes;
+        this.listeningPort = BASE_SOCKET_PORT;
+        while ( listeningPort < MAX_PORT_NUMBER )  {
+            try {
+                this.listeningSocket = new DatagramSocket(this.listeningPort);
+                System.out.println("Opened a socket on port " + this.listeningPort);
+                this.listeningSocket.setSoTimeout(this.SOCKET_TIMEOUT_MS);
+                break;
+            } catch ( IOException e ) {
+                this.listeningPort += 1;
+            }
         }
     }
 
@@ -76,26 +94,27 @@ public class MessageReceive extends Util implements Runnable {
      * @param filterSessionID SessionID to find message for (0 for don't care)
      * @param filterPacketType Array of acceptable packet types (ignored if filterSessionID is not 0)
      * @param peer[out]
-     * @param packetHeader[out]
+     * @param packetType[out]
+     * @param sessionID[out]
      * @param packetData[out]
      *
      * @return true if a message was found and output parameters are populated, false otherwise
      */
-    public boolean GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer peer, PacketHeader packetHeader, byte[] packetData) {
+    public boolean GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer peer, PacketType packetType, int sessionID, byte[] packetData) {
         MessageBuffer message;
 
         if (filterSessionID != 0) {
             if ((message = this.FindMessage(filterSessionID)) != null) {
-                if (message.IsMessageComplete(peer, packetHeader, packetData)) {
+                if (message.IsMessageComplete(peer, packetType, sessionID, packetData)) {
                     // TODO: remove message from this.messageBuffers
                     return true;
                 }
             }
         } else {
             for (MessageBuffer loopMessage : this.messageBuffers) {
-                if (loopMessage.IsMessageComplete(peer, packetHeader, packetData)) {
+                if (loopMessage.IsMessageComplete(peer, packetType, sessionID, packetData)) {
                     for (PacketType type : this.acceptedPacketTypes) {
-                        if (packetHeader.packetType == type) {
+                        if (packetType == type) {
                             // TODO: remove message from this.messageBuffers
                             return true;
                         }

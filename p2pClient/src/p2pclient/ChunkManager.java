@@ -32,6 +32,13 @@ public class ChunkManager {
         filename = newFile;
     }
 
+    public ChunkManager FindChunkManager(String filename) {
+        if ( this.filename.equals(filename) ) {
+            return this;
+        }
+        return null;
+    }
+
     /*
      * Description:
      *   Returns an array of ChunkInfo that make up this file

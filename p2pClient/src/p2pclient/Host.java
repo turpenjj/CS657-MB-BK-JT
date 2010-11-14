@@ -5,11 +5,14 @@
 
 package p2pclient;
 
+
 /**
  *
  * @author Matt
  */
-public class Host extends Util{
+public class Host extends Util implements Runnable{
+    int MAX_NUMBER_FILES = 1024;
+    private Thread runner;
     ChunkManager[] chunkManagers;
     PeerManager peerManager;
     RequestingClient[] requestingClients;
@@ -18,9 +21,34 @@ public class Host extends Util{
     String shareFolder;
 
     Host(int servingClientListeningPort, String directory) {
+        runner = null;
         listeningPort = servingClientListeningPort;
         shareFolder = directory;
+        chunkManagers = new ChunkManager[2];
+        chunkManagers[0] = new ChunkManager("fu");
+        chunkManagers[1] = new ChunkManager("man");
+        servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
+
     }
+
+    public void start() {
+        if ( runner == null ) {
+            runner = new Thread(this);
+            runner.start();
+        }
+    }
+
+    public void run() {
+        System.out.println("Startng a new host, listening for connections on port " + listeningPort);
+        ChunkManager[] temp = new ChunkManager[3];
+        System.arraycopy(chunkManagers, 0, temp, 0, 2);
+        chunkManagers = temp;
+        chunkManagers[2] = new ChunkManager("chu");
+        servingClient.UpdateChunkManagers(chunkManagers);
+        //Start our listener so we can serve out file chunks upon request
+        servingClient.start();
+    }
+
 
     /*
      * Description:

@@ -139,7 +139,7 @@ public class Util {
     /*
      * Handles dividing a message and its data into individual packets and sending them to a peer.
      */
-    public void SendCommunication(Peer peer, PacketHeader packetHeader, byte[] sendData) {
+    public void SendCommunication(Peer peer, PacketType packetType, int sessionID, byte[] sendData) {
         // create the sending socket
         // loop through the data and call SendPacket() for each chunk
     }

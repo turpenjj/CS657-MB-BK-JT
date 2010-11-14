@@ -35,15 +35,17 @@ public class MessageBuffer {
      * Returns the header and message data for this message if it has been completely received
      *
      * @param peer[out]
-     * @param packetHeader[out]
+     * @param packetType[out]
+     * @param sessionID[out]
      * @param messageData[out]
      *
      * @return true if message is complete (output parameters are valid), false otherwise
      */
-    public boolean IsMessageComplete(Peer peer, PacketHeader packetHeader, byte[] messageData) {
+    public boolean IsMessageComplete(Peer peer, PacketType packetType, int sessionID, byte[] messageData) {
         if ( this.totalBytesReceived == this.packetHeader.totalSize ) {
             peer = this.peer;
-            packetHeader = this.packetHeader;
+            packetType = this.packetHeader.packetType;
+            sessionID = this.packetHeader.sessionID;
             messageData = this.messageData;
 
             return true;

@@ -23,10 +23,12 @@ public class ChunkListResponse extends Util {
      * Description:
      *   The constructor for the server side of the response
      */
-    ChunkListResponse(String requestedFile, int[] chunkNumbers) {
-        chunkList = new int[chunkNumbers.length];
+    ChunkListResponse(String requestedFile, ChunkInfo[] chunkInfo) {
+        chunkList = new int[chunkInfo.length];
         filename = requestedFile;
-        System.arraycopy(chunkNumbers, 0, chunkList, 0, chunkNumbers.length);
+        for ( int i = 0; i < chunkInfo.length; i++ ) {
+            chunkList[i] = chunkInfo[i].chunkNumber;
+        }
     }
 
 
