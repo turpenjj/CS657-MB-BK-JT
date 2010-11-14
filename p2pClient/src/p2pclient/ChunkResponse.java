@@ -39,10 +39,14 @@ public class ChunkResponse extends Util {
      *   the chunk as a byte array
      */
     public byte[] ExportMessagePayload() {
-        int requestLength = filename.length(); //filename
+        //filename, null byte, chunk number, chunk data
+        int requestLength = filename.length() + 5 + chunkData.length;
         byte[] requestInBytes = new byte[requestLength];
 
         System.arraycopy(filename.getBytes(), 0, requestInBytes, 0, filename.getBytes().length);
+        requestInBytes[filename.length()] = 0x00;
+        System.arraycopy(IntToByteArray(chunkNumber), 0, requestInBytes, filename.length() + 1, 4);
+        System.arraycopy(chunkData, 0, requestInBytes, filename.length() + 5, chunkData.length);
 
         return requestInBytes;
     }
@@ -52,6 +56,19 @@ public class ChunkResponse extends Util {
      *   Imports the payload portion of the response
      */
     public void ImportMessagePayload(byte[] data) {
+        int StringLength = 0;
+        while ( data[StringLength] != 0x00 ) {
+            StringLength++;
+        }
+        byte[] stringInBytes = new byte[StringLength];
+        System.arraycopy(data, 0, stringInBytes, 0, StringLength);
+        filename = new String(stringInBytes);
+
+        byte[] rawChunkNumber = new byte[4];
+        System.arraycopy(data, StringLength + 1, rawChunkNumber, 0, 4);
+        chunkNumber = ByteArrayToInt(rawChunkNumber);
+        chunkData = new byte[data.length - StringLength - 5];
+        System.arraycopy(data, StringLength + 5, chunkData, 0, data.length - StringLength - 5);
 
     }
 }
