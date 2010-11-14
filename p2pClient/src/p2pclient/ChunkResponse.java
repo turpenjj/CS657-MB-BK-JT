@@ -12,7 +12,6 @@ package p2pclient;
 public class ChunkResponse extends Util {
     public String filename;
     public int chunkNumber;
-    public int listeningPort;
     byte[] chunkData;
 
     /*

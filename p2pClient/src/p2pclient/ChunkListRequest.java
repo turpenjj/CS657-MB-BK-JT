@@ -50,11 +50,10 @@ public class ChunkListRequest extends Util {
      *   Imports the payload portion of the request
      */
     public void ImportMessagePayload(byte[] data) {
-        
-    }
-
-    public int GetSize() {
-        return filename.length() + 4;
+        receivingPort = ByteArrayToInt(data);
+        byte[] stringInBytes = new byte[data.length - 4];
+        System.arraycopy(data, 4, stringInBytes, 0, data.length-4);
+        filename = new String(stringInBytes);
     }
 
 }

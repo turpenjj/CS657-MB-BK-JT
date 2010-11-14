@@ -42,9 +42,10 @@ public class RequestingClient extends Util implements Runnable {
     private int FindAvailableListener() {
         int listenerIndex = 0;
         while (listenerIndex < MAX_LISTENERS) {
-            if ( listeners[listenerIndex].available ) {
+            if ( listeners[listenerIndex].available == true ) {
                 return listenerIndex;
             }
+            listenerIndex++;
         }
         return -1;
     }
@@ -82,7 +83,15 @@ public class RequestingClient extends Util implements Runnable {
      * Returns the index of the listener it is using
      */
     public int RequestChunk(int chunkNumber) {
+        System.out.println("here");
+        ChunkRequest test = new ChunkRequest();
+        byte[] temp = new byte[14];
+        System.arraycopy("hello".getBytes(), 0, temp, 8, "hello".length());
+        test.ImportMessagePayload(temp);
         int listenerIndex = FindAvailableListener();
+        if ( listenerIndex == -1 ) {
+            return -1;
+        }
         listeners[listenerIndex].start();
         ChunkRequest chunkRequest = new ChunkRequest(filename, chunkNumber, listeners[listenerIndex].listeningPort);
         SendPacket(servingHost, chunkRequest.ExportMessagePayload());
@@ -117,6 +126,9 @@ public class RequestingClient extends Util implements Runnable {
      */
     public int RequestChunkList() {
         int listenerIndex = FindAvailableListener();
+        if ( listenerIndex == -1 ) {
+            return -1;
+        }
         listeners[listenerIndex].start();
 
         ChunkListRequest chunkListRequest = new ChunkListRequest(filename, listeners[listenerIndex].listeningPort);
@@ -141,8 +153,6 @@ public class RequestingClient extends Util implements Runnable {
         }
         return requestStatus;
     }
-    /********************************************/
-
 }
 
 class RequestingClientListener implements Runnable {
@@ -158,6 +168,7 @@ class RequestingClientListener implements Runnable {
 
     RequestingClientListener() {
         System.out.println("Creating a listener");
+        available = true;
     }
 
     public void start() {

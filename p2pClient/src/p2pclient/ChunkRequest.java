@@ -38,8 +38,12 @@ public class ChunkRequest extends Util {
      *   the chunk request as a byte array
      */
     public byte[] ExportMessagePayload() {
-        int requestLength = 0; //filename + receiving port
+        int requestLength = filename.length() + 4 + 4; // 4  for chunk number, 4 for port
         byte[] requestInBytes = new byte[requestLength];
+
+        System.arraycopy(IntToByteArray(chunkNumber), 0, requestInBytes, 0, 4);
+        System.arraycopy(IntToByteArray(listeningPort), 0, requestInBytes, 4, 4);
+        System.arraycopy(filename.getBytes(), 0, requestInBytes, 8, filename.length());
 
         return requestInBytes;
     }
@@ -49,7 +53,14 @@ public class ChunkRequest extends Util {
      *   Imports the payload portion of the request
      */
     public void ImportMessagePayload(byte[] data) {
-
+        byte[] tempByteArray = new byte[4];
+        System.arraycopy(data, 0, tempByteArray, 0, 4);
+        chunkNumber = ByteArrayToInt(tempByteArray);
+        System.arraycopy(data, 4, tempByteArray, 0, 4);
+        listeningPort = ByteArrayToInt(tempByteArray);
+        byte[] stringInBytes = new byte[data.length - 8];
+        System.arraycopy(data, 8, stringInBytes, 0, data.length - 8);
+        filename = new String(stringInBytes);
     }
 
 }
