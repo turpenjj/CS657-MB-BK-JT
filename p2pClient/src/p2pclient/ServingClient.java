@@ -5,6 +5,8 @@
 
 package p2pclient;
 
+import java.net.*;
+
 /**
  * Description:
  *  This class is the client program running on a p2p Host that receives,
@@ -15,6 +17,7 @@ package p2pclient;
 public class ServingClient implements Runnable {
     Thread runner;
     int listeningPort;
+    DatagramSocket listeningSocket;
 
     ServingClient(int port) {
         listeningPort = port;

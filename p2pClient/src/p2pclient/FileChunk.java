@@ -12,30 +12,33 @@ import java.security.NoSuchAlgorithmException;
  * @author Matt
  */
 public class FileChunk {
-    String filename;
-    int chunkNumber;
+    ChunkInfo chunkInfo;
     byte[] chunk;
-    static byte[] sha1Hash = new byte[40];
 
-    FileChunk(String file, int chNumber) {
-        filename = file;
-        chunkNumber = chNumber;
+    /*
+     * Description:
+     *   Passes the constructor through to the ChunkInfo Constructor
+     */
+    FileChunk(int chunkNumber, byte[] chunkHash, int status) {
+        chunkInfo = new ChunkInfo(chunkNumber, chunkHash, status);
     }
 
-//    public void SetOffset(int offset) {
-//        offsetIntoFile = offset;
-//    }
-//    public int GetOffset() {
-//        return offsetIntoFile;
-//    }
-//
-//    public void SetLength(int length) {
-//        chunkLength = length;
-//    }
-//
-//    public int GetLength() {
-//        return chunkLength;
-//    }
+    /*
+     * Description:
+     *   Updates the chunk with newData.
+     *   Returns false if the hash of newData doesn't match what is expected
+     */
+    public boolean UpdateChunk(byte[] newData, Peer receivedFrom) {
+        return false;
+    }
+
+    /*
+     * Description:
+     *   Returns the byte data for this chunk
+     */
+    public byte[] GetChunkData() {
+        return null;
+    }
 
     public void SetChunk(byte[] data, int length) {
         chunk = new byte[length];
@@ -44,15 +47,15 @@ public class FileChunk {
     }
 
     public byte[] GetHash() {
-        return sha1Hash;
+        return chunkInfo.hash;
     }
 
     public String GetHashString() {
-        return ConvertToHex(sha1Hash);
+        return ConvertToHex(chunkInfo.hash);
     }
 
     private void CalcSha1Hash() {
-        sha1Hash = SHA1(chunk);
+        chunkInfo.hash = SHA1(chunk);
     }
 
     public static String ConvertToHex(byte[] data) {
@@ -73,16 +76,16 @@ public class FileChunk {
         return buf.toString();
     }
 
-    private static byte[] SHA1 (byte[] toHash) {
+    private byte[] SHA1 (byte[] toHash) {
         try {
             MessageDigest md;
             md = MessageDigest.getInstance("SHA-1");
 
             md.update(toHash, 0, toHash.length);
-            sha1Hash = md.digest();
+            chunkInfo.hash = md.digest();
         } catch (NoSuchAlgorithmException e) {
             System.out.println("Trouble, no SHA1 algorithm");
         }
-        return sha1Hash;
+        return chunkInfo.hash;
     }
 }

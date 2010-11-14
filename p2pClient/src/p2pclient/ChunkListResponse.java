@@ -10,29 +10,25 @@ package p2pclient;
  * @author Matt
  */
 public class ChunkListResponse extends Util {
-    PacketHeader packetHeader;
     String filename;
-    int[] chunkNumber;
+    int[] chunkList;
     Peer peer;
-
-    ChunkListResponse(Peer requestingPeer, String request) {
-        peer = requestingPeer;
-        filename = request;
-    }
 
     /*
      * Description:
-     *   Determines the available chunks for the requested file and returns the chunk List
-     *
-     * Returns:
-     *   int[] containing all chunks we have available to share
-     *   null if we don't have any chunks
+     *   The constructor for the client side of the response
      */
-    public int[] GetChunkList() {
-        int[] chunkList = null;
+    ChunkListResponse() {}
 
-        return chunkList;
+    /*
+     * Description:
+     *   The constructor for the server side of the response
+     */
+    ChunkListResponse(String requestedFile, int[] chunkNumbers) {
+        filename = requestedFile;
+        chunkList = chunkNumbers;
     }
+
 
     /*
      * Description:
@@ -41,7 +37,7 @@ public class ChunkListResponse extends Util {
      * Returns:
      *   the chunk list request as a byte array
      */
-    public byte[] GetBytes() {
+    public byte[] ExportMessagePayload() {
         int requestLength = filename.length() + 4; //filename + receiving port
         byte[] requestInBytes = new byte[requestLength];
 
@@ -53,6 +49,14 @@ public class ChunkListResponse extends Util {
 
     /*
      * Description:
+     *   Imports the payload portion of the response
+     */
+    public void ImportMessagePayload(byte[] data) {
+
+    }
+
+    /*
+     * Description:
      *   Sends the chunk list to the peer who requested it
      *s
      * Returns:
@@ -60,7 +64,7 @@ public class ChunkListResponse extends Util {
      *   False if an error occurred
      */
     public void Send() {
-        SendPacket(peer, this.GetBytes());
+        SendPacket(peer, this.ExportMessagePayload());
     }
 
 }

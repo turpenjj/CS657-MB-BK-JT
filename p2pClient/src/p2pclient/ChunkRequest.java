@@ -10,11 +10,15 @@ package p2pclient;
  * @author Matt
  */
 public class ChunkRequest extends Util {
-    PacketHeader packetHeader;
     String filename;
     int chunkNumber;
+    int listeningPort;
     Peer peer;
 
+    /*
+     * Description:
+     *   The constructor for the client-side of the request
+     */
     ChunkRequest(Peer servingPeer, String request, int number) {
         peer = servingPeer;
         filename = request;
@@ -23,16 +27,30 @@ public class ChunkRequest extends Util {
 
     /*
      * Description:
+     *   The constructor for the server-side of the request
+     */
+    ChunkRequest() {}
+
+    /*
+     * Description:
      *   Gets a byte array representation of the request
      *
      * Returns:
      *   the chunk request as a byte array
      */
-    public byte[] GetBytes() {
+    public byte[] ExportMessagePayload() {
         int requestLength = 0; //filename + receiving port
         byte[] requestInBytes = new byte[requestLength];
 
         return requestInBytes;
+    }
+
+    /*
+     * Description:
+     *   Imports the payload portion of the request
+     */
+    public void ImportMessagePayload(byte[] data) {
+
     }
 
     /*
@@ -44,7 +62,7 @@ public class ChunkRequest extends Util {
      *   False if an error occurred
      */
     public boolean Send() {
-        return SendPacket(peer, this.GetBytes());
+        return SendPacket(peer, this.ExportMessagePayload());
     }
 
 }
