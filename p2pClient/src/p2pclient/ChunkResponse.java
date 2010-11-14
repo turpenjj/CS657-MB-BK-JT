@@ -42,11 +42,15 @@ public class ChunkResponse extends Util {
         //filename, null byte, chunk number, chunk data
         int requestLength = filename.length() + 5 + chunkData.length;
         byte[] requestInBytes = new byte[requestLength];
+        int indexIntoByteArray = 0;
 
-        System.arraycopy(filename.getBytes(), 0, requestInBytes, 0, filename.getBytes().length);
-        requestInBytes[filename.length()] = 0x00;
-        System.arraycopy(IntToByteArray(chunkNumber), 0, requestInBytes, filename.length() + 1, 4);
-        System.arraycopy(chunkData, 0, requestInBytes, filename.length() + 5, chunkData.length);
+        indexIntoByteArray += InsertNullTerminatedString(requestInBytes, 0, filename);
+        indexIntoByteArray += IntToByteArray(requestInBytes, indexIntoByteArray, chunkNumber);
+        System.arraycopy(chunkData, 0, requestInBytes, indexIntoByteArray, chunkData.length);
+//        System.arraycopy(filename.getBytes(), 0, requestInBytes, 0, filename.getBytes().length);
+//        requestInBytes[filename.length()] = 0x00;
+//        System.arraycopy(IntToByteArray(chunkNumber), 0, requestInBytes, filename.length() + 1, 4);
+//        System.arraycopy(chunkData, 0, requestInBytes, filename.length() + 5, chunkData.length);
 
         return requestInBytes;
     }
@@ -56,19 +60,26 @@ public class ChunkResponse extends Util {
      *   Imports the payload portion of the response
      */
     public void ImportMessagePayload(byte[] data) {
-        int StringLength = 0;
-        while ( data[StringLength] != 0x00 ) {
-            StringLength++;
-        }
-        byte[] stringInBytes = new byte[StringLength];
-        System.arraycopy(data, 0, stringInBytes, 0, StringLength);
-        filename = new String(stringInBytes);
+        int[] indexIntoByteArray = new int[1];
+        filename = ExtractNullTerminatedString(data, 0, indexIntoByteArray);
+        chunkNumber = ByteArrayToInt(data, indexIntoByteArray[0]);
+        indexIntoByteArray[0] += 4;
+        chunkData = new byte[data.length - indexIntoByteArray[0]];
+        System.arraycopy(data, indexIntoByteArray[0], chunkData, 0, chunkData.length);
 
-        byte[] rawChunkNumber = new byte[4];
-        System.arraycopy(data, StringLength + 1, rawChunkNumber, 0, 4);
-        chunkNumber = ByteArrayToInt(rawChunkNumber);
-        chunkData = new byte[data.length - StringLength - 5];
-        System.arraycopy(data, StringLength + 5, chunkData, 0, data.length - StringLength - 5);
+//        int StringLength = 0;
+//        while ( data[StringLength] != 0x00 ) {
+//            StringLength++;
+//        }
+//        byte[] stringInBytes = new byte[StringLength];
+//        System.arraycopy(data, 0, stringInBytes, 0, StringLength);
+//        filename = new String(stringInBytes);
+//
+//        byte[] rawChunkNumber = new byte[4];
+//        System.arraycopy(data, StringLength + 1, rawChunkNumber, 0, 4);
+//        chunkNumber = ByteArrayToInt(rawChunkNumber);
+//        chunkData = new byte[data.length - StringLength - 5];
+//        System.arraycopy(data, StringLength + 5, chunkData, 0, data.length - StringLength - 5);
 
     }
 }

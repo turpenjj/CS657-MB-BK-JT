@@ -49,6 +49,13 @@ public class Util {
         return index + 4;
     }
 
+    public static int IntArrayToByteArray(byte[] b, int index, int[] value) {
+        for ( int i = 0; i < value.length; i++ ) {
+            IntToByteArray(b, i*4, value[i]);
+        }
+        return index + 4*value.length;
+    }
+
     public static int ByteArrayToInt(byte[] b) {
         return (b[0] << 24)
                 + ((b[1] & 0xFF) << 16)
@@ -97,7 +104,9 @@ public class Util {
         }
         // move past the null-terminator
         i++;
-        nextIndex[0] = i;
+        if ( nextIndex != null ) {
+            nextIndex[0] = i;
+        }
 
         return string;
     }
