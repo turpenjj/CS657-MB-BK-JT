@@ -83,11 +83,6 @@ public class RequestingClient extends Util implements Runnable {
      * Returns the index of the listener it is using
      */
     public int RequestChunk(int chunkNumber) {
-        System.out.println("here");
-        ChunkRequest test = new ChunkRequest();
-        byte[] temp = new byte[14];
-        System.arraycopy("hello".getBytes(), 0, temp, 8, "hello".length());
-        test.ImportMessagePayload(temp);
         int listenerIndex = FindAvailableListener();
         if ( listenerIndex == -1 ) {
             return -1;
