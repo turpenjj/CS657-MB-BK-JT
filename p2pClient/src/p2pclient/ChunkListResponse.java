@@ -12,7 +12,6 @@ package p2pclient;
 public class ChunkListResponse extends Util {
     String filename;
     int[] chunkList;
-    Peer peer;
 
     /*
      * Description:
@@ -41,7 +40,7 @@ public class ChunkListResponse extends Util {
         int requestLength = filename.length() + 4; //filename + receiving port
         byte[] requestInBytes = new byte[requestLength];
 
-        System.arraycopy(IntToByteArray(peer.listeningPort), 0, requestInBytes, 0, 4);
+//        System.arraycopy(IntToByteArray(peer.listeningPort), 0, requestInBytes, 0, 4);
         System.arraycopy(filename.getBytes(), 0, requestInBytes, 4, filename.getBytes().length);
 
         return requestInBytes;
@@ -53,18 +52,6 @@ public class ChunkListResponse extends Util {
      */
     public void ImportMessagePayload(byte[] data) {
 
-    }
-
-    /*
-     * Description:
-     *   Sends the chunk list to the peer who requested it
-     *s
-     * Returns:
-     *   True if packet was sent
-     *   False if an error occurred
-     */
-    public void Send() {
-        SendPacket(peer, this.ExportMessagePayload());
     }
 
 }

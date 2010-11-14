@@ -12,14 +12,12 @@ package p2pclient;
 public class ChunkListRequest extends Util {
     public int receivingPort;
     public String filename;
-    Peer peer;
 
     /*
      * Description:
      *   The constructor for the client side of the request
      */
-    ChunkListRequest(Peer servingPeer, int port, String request) {
-        peer = servingPeer;
+    ChunkListRequest(String request, int port) {
         receivingPort = port;
         filename = request;
     }
@@ -57,18 +55,6 @@ public class ChunkListRequest extends Util {
 
     public int GetSize() {
         return filename.length() + 4;
-    }
-
-    /*
-     * Description:
-     *   Sends the chunk list request to the peer the request is destined for
-     *
-     * Returns:
-     *   True if packet was sent
-     *   False if an error occurred
-     */
-    public boolean Send() {
-        return SendPacket(peer, this.ExportMessagePayload());
     }
 
 }

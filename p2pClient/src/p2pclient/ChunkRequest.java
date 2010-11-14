@@ -13,16 +13,15 @@ public class ChunkRequest extends Util {
     String filename;
     int chunkNumber;
     int listeningPort;
-    Peer peer;
 
     /*
      * Description:
      *   The constructor for the client-side of the request
      */
-    ChunkRequest(Peer servingPeer, String request, int number) {
-        peer = servingPeer;
+    ChunkRequest(String request, int number, int port) {
         filename = request;
         chunkNumber = number;
+        listeningPort = port;
     }
 
     /*
@@ -51,18 +50,6 @@ public class ChunkRequest extends Util {
      */
     public void ImportMessagePayload(byte[] data) {
 
-    }
-
-    /*
-     * Description:
-     *   Sends the chunk list request to the peer the request is destined for
-     *
-     * Returns:
-     *   True if packet was sent
-     *   False if an error occurred
-     */
-    public boolean Send() {
-        return SendPacket(peer, this.ExportMessagePayload());
     }
 
 }
