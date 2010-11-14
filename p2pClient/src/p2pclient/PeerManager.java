@@ -27,8 +27,20 @@ public class PeerManager {
 
     }
 
-    private int FindPeerInList(Peer peerToFind) {
-        return 0;
+    public void AddCreditForUsToPeer(Peer peerToUpdate) {
+        Peer peer = FindPeerInList(peerToUpdate);
+
+        peer.creditForUs++;
+    }
+
+    public void AddCreditForThemToPeer(Peer peerToUpdate) {
+        Peer peer = FindPeerInList(peerToUpdate);
+
+        peer.creditForThem++;
+    }
+
+    private Peer FindPeerInList(Peer peerToFind) {
+        return null;
     }
 
     /*
@@ -56,6 +68,11 @@ public class PeerManager {
      */
     public Peer GetPeer(int ip) {
         return null;
+    }
+
+    public boolean ShouldTradeWith(Peer peer) {
+        //TODO: Implement algorithm to determine if we want to share with the given peer or not
+        return false;
     }
 
 }

@@ -43,7 +43,7 @@ public class Peer {
      *   Adds (or updates) the chunk list for the given filename.
      *   Indices into chunkList are based on lookup of the filename in fileList
      */
-    public void AddChunkToList(String filename, int[] chunkList) {
+    public void AddToChunkList(String filename, int[] chunkList) {
         
     }
 }

@@ -54,35 +54,28 @@ public class ServingClient extends Util implements Runnable {
         //to respond and respond if we want
         for ( ;; ) {
             PacketType packetType = null;
-            int sessionID = 0;
+            int[] sessionID = new int[1];
+            sessionID[0] = 0;
             Peer peer = null;
             byte[] packetData = null;
-//            if ( listener.GetMessage(0, acceptedPackets, peer, packetType, sessionID, packetData)) {
-//                switch (packetType) {
-//                    case CHUNK_LIST_REQUEST:
-//                        ChunkListRequest chunkListRequest = new ChunkListRequest();
-//                        chunkListRequest.ImportMessagePayload(packetData);
-//                        SendChunkListResponse(peer, chunkListRequest, sessionID);
-//                        break;
-//                    case CHUNK_REQUEST:
-//                        if ( ShouldSendToPeer(peer) ) {
-//                            ChunkRequest chunkRequest = new ChunkRequest();
-//                            chunkRequest.ImportMessagePayload(packetData);
-//                            SendChunkResponse(peer, chunkRequest, sessionID);
-//                        }
-//                        break;
-//                }
-//            }
+            if ( listener.GetMessage(0, acceptedPackets, peer, packetType, sessionID, packetData)) {
+                switch (packetType) {
+                    case CHUNK_LIST_REQUEST:
+                        ChunkListRequest chunkListRequest = new ChunkListRequest();
+                        chunkListRequest.ImportMessagePayload(packetData);
+                        SendChunkListResponse(peer, chunkListRequest, sessionID[0]);
+                        break;
+                    case CHUNK_REQUEST:
+                        if ( peerManager.ShouldTradeWith(peer) ) {
+                            ChunkRequest chunkRequest = new ChunkRequest();
+                            chunkRequest.ImportMessagePayload(packetData);
+                            SendChunkResponse(peer, chunkRequest, sessionID[0]);
+                            peerManager.AddCreditForUsToPeer(peer);
+                        }
+                        break;
+                }
+            }
         }
-    }
-
-    private boolean ShouldSendToPeer(Peer peer) {
-        Peer persistentPeer = peerManager.GetPeer(peer.clientIp);
-
-        if ( persistentPeer.creditForThem > persistentPeer.creditForUs ) {
-            return true;
-        }
-        return false;
     }
 
     private void SendChunkListResponse(Peer peer, ChunkListRequest chunkListRequest, int sessionID) {
@@ -116,17 +109,6 @@ public class ServingClient extends Util implements Runnable {
         acceptedPackets[1] = PacketType.CHUNK_REQUEST;
         listener = new MessageReceive(listeningPort, acceptedPackets);
         listener.start();
-    }
-
-    /*
-     * Description:
-     *   Get the amount of "credit" the peer has to determine if the peer is worth
-     *   our time
-     */
-    private int GetPeerCredit() {
-        int peerCredit = 0;
-
-        return peerCredit;
     }
 
     /*

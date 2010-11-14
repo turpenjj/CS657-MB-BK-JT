@@ -55,7 +55,7 @@ public class MessageReceive extends Util implements Runnable {
     }
 
     public void run() {
-        System.out.println("Started a Message Receive thread" + this.listeningSocket.getLocalPort());
+        System.out.println("Started a Message Receive thread " + this.listeningSocket.getLocalPort());
 
         /* Outline:
          * Call ReceiveCommunication in a loop. Don't worry about timeouts. When a full message is received, call ProcessQuery().
@@ -100,7 +100,7 @@ public class MessageReceive extends Util implements Runnable {
      *
      * @return true if a message was found and output parameters are populated, false otherwise
      */
-    public boolean GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer peer, PacketType packetType, int sessionID, byte[] packetData) {
+    public boolean GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer peer, PacketType packetType, int[] sessionID, byte[] packetData) {
         MessageBuffer message;
 
         if (filterSessionID != 0) {
