@@ -11,7 +11,7 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author Matt
  */
-public class FileChunk extends Util {
+public class FileChunk {
     ChunkInfo chunkInfo;
     byte[] chunk;
 
@@ -19,17 +19,38 @@ public class FileChunk extends Util {
      * Description:
      *   Passes the constructor through to the ChunkInfo Constructor
      */
-    FileChunk(int chunkNumber, byte[] chunkHash, int status) {
+    FileChunk(int chunkNumber, byte[] chunkHash, int status, byte[] chunk) {
         chunkInfo = new ChunkInfo(chunkNumber, chunkHash, status);
+        this.chunk = chunk;
     }
 
     /*
      * Description:
      *   Updates the chunk with newData.
-     *   Returns false if the hash of newData doesn't match what is expected
+     *   If the hashof the new data doesn't match the expected hash, the new chunk
+     *   is not updated
      */
-    public boolean UpdateChunk(byte[] newData, Peer receivedFrom) {
-        return false;
+    public void UpdateChunk(byte[] newData, Peer receivedFrom) {
+        //if we have newData, we better have a peer we've received it from
+        if ( newData != null ) {
+            if ( VerifyHash(newData) ) {
+                //Finished chunk means we're good to go.
+                chunkInfo.status = 2;
+                receivedFrom.creditForThem++;
+            } else {
+                //If we are updating the status, that means the peer has finished
+                //sending the chunk... if the hash doesn't match, drop the chunk
+                //and set the status back to missing
+                chunkInfo.status = 0;
+            }
+        } else if ( receivedFrom != null ) {
+            //If we are updating a chunk with a peer but no data, that means we've
+            //started a new download for the chunk.
+            chunkInfo.status = 1;
+        } else {
+            //If neither is set, the chunk download timed out, so set it back to missing
+            chunkInfo.status = 0;
+        }
     }
 
     /*
@@ -51,7 +72,15 @@ public class FileChunk extends Util {
     }
 
     public String GetHashString() {
-        return ConvertToHex(chunkInfo.hash);
+        return Util.ConvertToHex(chunkInfo.hash);
+    }
+
+    private boolean VerifyHash(byte[] newChunk) {
+        byte[] newChunkHash = SHA1(newChunk);
+        if ( GetHashString().equals(Util.ConvertToHex(newChunkHash)) ) {
+            return true;
+        }
+        return false;
     }
 
     private void CalcSha1Hash() {
