@@ -28,11 +28,13 @@ public class RequestingClient extends Util implements Runnable {
     private int DEFAULT_LISTEN_TIMEOUT = 15000;
     private int LIST_REQUEST_FREQUENCY = 20000;
     private ChunkManager chunkManager;
+    private PeerManager peerManager;
 
-    RequestingClient(Peer host, String requestedFilename, ChunkManager chunkManager) {
+    RequestingClient(Peer host, String requestedFilename, ChunkManager chunkManager, PeerManager peerManager) {
         this.servingHost = host;
         this.filename = requestedFilename;
         this.chunkManager = chunkManager;
+        this.peerManager = peerManager;
     }
 
     //Creates and starts a new RequestingClient thread
@@ -54,6 +56,8 @@ public class RequestingClient extends Util implements Runnable {
                 timeForListRequest = GetCurrentTime() + LIST_REQUEST_FREQUENCY;
                 RequestChunkList();
             }
+            //TODO: Determine which chunk(s) to spin up requests for
+
                 //Loop through listeners and check response status for each listener
                 for ( int i = 0; listenerList != null && i < listenerList.length; i++ ) {
                     PacketType[] packetType = new PacketType[1];
@@ -184,9 +188,11 @@ System.out.println("Sending out a new chunk list request " + (nextSessionID - 1)
         if ( rawData != null ) {
             ChunkListResponse chunkListResponse = new ChunkListResponse();
             chunkListResponse.ImportMessagePayload(rawData);
-            
+
+            System.out.println("Received a chunk list for " + chunkListResponse.filename);
             //TODO: Update peer in Peer Manager
-            servingHost.AddToChunkList(filename, chunkListResponse.chunkList);
+            peerManager.UpdatePeer(servingHost);
+            servingHost.UpdateChunkList(filename, chunkListResponse.chunkList);
         }
     }
 

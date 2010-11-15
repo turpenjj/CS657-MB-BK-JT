@@ -31,7 +31,7 @@ public class ChunkManager {
         filename = newFile;
     }
 
-    public ChunkManager FindChunkManager(String filename) {
+    public synchronized ChunkManager FindChunkManager(String filename) {
         if ( this.filename.equals(filename) ) {
             return this;
         }
@@ -42,7 +42,7 @@ public class ChunkManager {
      * Description:
      *   Returns an array of ChunkInfo that make up this file
      */
-    public ChunkInfo[] GetChunkInfo() {
+    public synchronized ChunkInfo[] GetChunkInfo() {
         ChunkInfo[] chunkInfoList = new ChunkInfo[chunkList.length];
         for ( int i = 0; i < chunkList.length; i++ ) {
             chunkInfoList[i] = chunkList[i].chunkInfo;
@@ -55,11 +55,11 @@ public class ChunkManager {
      *   Returns an array of ChunkInfo for all chunks still needed to complete
      *   the file
      */
-    public ChunkInfo[] NeededChunks() {
+    public synchronized ChunkInfo[] NeededChunks() {
         return GetChunkList(0);
     }
 
-    public ChunkInfo[] DownloadingChunks() {
+    public synchronized ChunkInfo[] DownloadingChunks() {
         return GetChunkList(1);
     }
 
@@ -68,11 +68,11 @@ public class ChunkManager {
      *   Returns an array of ChunkInfo for all chunks that this host already
      *   has for the file
      */
-    public ChunkInfo[] AvailableChunks() {
+    public synchronized ChunkInfo[] AvailableChunks() {
         return GetChunkList(2);
     }
 
-    private ChunkInfo[] GetChunkList(int status) {
+    private synchronized ChunkInfo[] GetChunkList(int status) {
         ChunkInfo[] chunks = null;
 
         for ( int i = 0; i < chunkList.length; i++ ) {
@@ -94,7 +94,7 @@ public class ChunkManager {
      * Description:
      *   Updates the chunk indicated by chunkNumber with the data in chunkData
      */
-    public void UpdateChunk(int chunkNumber, byte[] chunkData, Peer receivedFrom) {
+    public synchronized void UpdateChunk(int chunkNumber, byte[] chunkData, Peer receivedFrom) {
         if ( chunkNumber < chunkList.length ) {
             chunkList[chunkNumber].UpdateChunk(chunkData, receivedFrom);
         }
@@ -104,7 +104,7 @@ public class ChunkManager {
      * Description:
      *   Returns the data associated with the given chunk
      */
-    public byte[] GetChunkData(int chunkNumber) {
+    public synchronized byte[] GetChunkData(int chunkNumber) {
         if ( chunkNumber < chunkList.length ) {
            return chunkList[chunkNumber].chunk;
         }

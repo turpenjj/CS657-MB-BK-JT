@@ -11,12 +11,12 @@ import java.net.*;
  * @author Matt
  */
 public class Peer {
-    InetAddress clientIp;
+    public InetAddress clientIp;
     int listeningPort;
-    String[] fileList;
+    public String[] fileList;
     int[][] chunkList; //[fileIndex][chunkIndex]
-    int creditForThem; //The credit associated with this peer
-    int creditForUs; //An approximation of the credit this peer has for us
+    public int creditForThem; //The credit associated with this peer
+    public int creditForUs; //An approximation of the credit this peer has for us
 
     Peer(InetAddress ip, int port) {
         clientIp = ip;
@@ -31,7 +31,14 @@ public class Peer {
      * Description:
      *   Returns the list of chunks this peer claims to have for a specified file
      */
-    public int[] GetChunkList(String filename) {
+    public synchronized int[] GetChunkList(String filename) {
+        if ( fileList != null ) {
+            for (int i = 0; i < fileList.length; i++ ) {
+                if ( fileList[i].equals(filename) ) {
+                    return chunkList[i];
+                }
+            }
+        }
         return null;
     }
 
@@ -39,16 +46,70 @@ public class Peer {
      * Description:
      *   Adds a file to the list of files this peer is offering
      */
-    public void AddFileToList(String filename) {
-
+    public synchronized void AddFileToList(String filename) {
+        if ( !HasFile(filename) ) {
+            if ( fileList == null ) {
+                fileList = new String[1];
+                chunkList = new int[1][];
+            } else {
+                String[] tempList = new String[fileList.length + 1];
+                int[][] tempChunkList = new int[chunkList.length + 1][];
+                System.arraycopy(fileList, 0, tempList, 0, fileList.length);
+                System.arraycopy(chunkList, 0, tempChunkList, 0, chunkList.length);
+                fileList = tempList;
+                chunkList = tempChunkList;
+            }
+            fileList[fileList.length - 1] = filename;
+        }
+    }
+    
+    public synchronized boolean HasFile(String filename) {
+        if ( fileList != null ) {
+            for (int i = 0; i < fileList.length; i++ ) {
+                if ( fileList[i].equals(filename) ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    public synchronized boolean HasChunk(String filename, int chunkNumber) {
+        int[] fileChunkList = GetChunkList(filename);
+        if ( fileChunkList != null ) {
+            for ( int i = 0; i < fileChunkList.length; i++ ) {
+                if ( fileChunkList[i] == chunkNumber ) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
     /*
+     * Gets the index into fileList[] (and chunkList[][]) for the given file
+     * if the file doesn't exist in the list, -1 is returned
+     */
+    private synchronized int GetFileIndex(String filename) {
+        if ( fileList != null ) {
+            for (int i = 0; i < fileList.length; i++ ) {
+                if ( fileList[i].equals(filename) ) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+    /*
      * Description:
-     *   Adds (or updates) the chunk list for the given filename.
+     *   Updates (or adds) the chunk list for the given filename.
      *   Indices into chunkList are based on lookup of the filename in fileList
      */
-    public void AddToChunkList(String filename, int[] chunkList) {
-        
+    public synchronized void UpdateChunkList(String filename, int[] chunkList) {
+        AddFileToList(filename);
+        int fileIndex = GetFileIndex(filename);
+        this.chunkList[fileIndex] = chunkList;
+
     }
 }

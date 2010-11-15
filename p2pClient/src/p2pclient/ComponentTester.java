@@ -518,7 +518,6 @@ public class ComponentTester {
         }
         ChunkListResponse response = new ChunkListResponse(filename, chunkInfoList);
         byte[] messageData = response.ExportMessagePayload();
-
         System.out.println("Filename = " + response.filename);
         for (int i = 0; i < response.chunkList.length; i++) {
             System.out.println("chunk[" + i + "]");
@@ -527,8 +526,8 @@ public class ComponentTester {
 
         responseImport.ImportMessagePayload(messageData);
 
-        System.out.println("Filename = " + response.filename);
-        for (int i = 0; i < response.chunkList.length; i++) {
+        System.out.println("Filename = " + responseImport.filename);
+        for (int i = 0; i < responseImport.chunkList.length; i++) {
             System.out.println("chunk[" + i + "]");
         }
     }
@@ -584,9 +583,10 @@ public class ComponentTester {
             chunkManagers[i] = new ChunkManager("Filename" + i);
             chunkManagers[i].chunkList = new FileChunk[2];
             byte[] tempHash = {(byte)i,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
-            chunkManagers[i].chunkList[0] = new FileChunk(0, tempHash, 0);
+            chunkManagers[i].chunkList[0] = new FileChunk(0, tempHash, 0, null);
             byte[] tempHash2 = {0,(byte)i,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
-            chunkManagers[i].chunkList[1] = new FileChunk(1, tempHash2, 1);
+            byte[] chunkPiece = {1,2,3,2,1,0};
+            chunkManagers[i].chunkList[1] = new FileChunk(1, tempHash2, 2, chunkPiece);
             chunkManagers[i].chunkList[1].chunk = new byte[3];
             chunkManagers[i].chunkList[1].chunk[0] = (byte)i;
             chunkManagers[i].chunkList[1].chunk[1] = (byte)2;
@@ -605,7 +605,7 @@ public class ComponentTester {
             Peer dummyPeer = new Peer(InetAddress.getLocalHost(), 51515);
             peerManager.UpdatePeer(dummyPeer);
             Peer peer = new Peer(InetAddress.getLocalHost(), 54321);
-            RequestingClient requestingClient = new RequestingClient(peer, "Filename1", chunkManagers[1]);
+            RequestingClient requestingClient = new RequestingClient(peer, "Filename1", chunkManagers[1], peerManager);
             requestingClient.start();
         } catch ( UnknownHostException e ) {
             System.out.println("We're in trouble... we can't find ourself " + e);

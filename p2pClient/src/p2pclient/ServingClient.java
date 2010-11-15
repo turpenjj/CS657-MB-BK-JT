@@ -65,6 +65,7 @@ System.out.println("ServingClient listening on port " + listeningPort);
                         ChunkListRequest chunkListRequest = new ChunkListRequest();
                         chunkListRequest.ImportMessagePayload(messageData);
                         peer[0].listeningPort = chunkListRequest.receivingPort;
+                        System.out.println("Chunk List requested for file " + chunkListRequest.filename);
                         SendChunkListResponse(peer[0], chunkListRequest, sessionID[0]);
                         break;
                     case CHUNK_REQUEST:
@@ -73,7 +74,8 @@ System.out.println("ServingClient listening on port " + listeningPort);
                             chunkRequest.ImportMessagePayload(messageData);
                             peer[0].listeningPort = chunkRequest.listeningPort;
                             SendChunkResponse(peer[0], chunkRequest, sessionID[0]);
-                            peerManager.AddCreditForUsToPeer(peer[0]);
+                            //TODO: Get Peer from Manager, then update him directly
+//                            peerManager.AddCreditForUsToPeer(peer[0]);
                         }
                         break;
                 }
@@ -93,7 +95,7 @@ System.out.println("ServingClient listening on port " + listeningPort);
         }
         ChunkListResponse chunkListResponse = new ChunkListResponse(chunkManager.filename, chunkManager.AvailableChunks());
         MessageSend sender = new MessageSend();
-        System.out.println("servingClient: sending out chunk list response");
+        System.out.println("servingClient: sending out chunk list response: " + Util.ConvertToHex(chunkListResponse.ExportMessagePayload()));
         sender.SendCommunication(peer, PacketType.CHUNK_LIST_RESPONSE, sessionID, chunkListResponse.ExportMessagePayload());
     }
 
