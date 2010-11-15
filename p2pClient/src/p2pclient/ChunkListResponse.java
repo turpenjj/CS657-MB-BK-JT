@@ -43,17 +43,8 @@ public class ChunkListResponse extends Util {
         //length of filename plus null spacer, plus length of chunk list
         int requestLength = filename.length() + 1 + chunkList.length * 4;
         byte[] requestInBytes = new byte[requestLength];
-        int indexIntoByteArray[] = new int[1];
-        indexIntoByteArray[0] = 0;
-
-        indexIntoByteArray[0] += InsertNullTerminatedString(requestInBytes, 0, filename);
-        IntArrayToByteArray(requestInBytes, indexIntoByteArray[0], chunkList);
-
-//        System.arraycopy(filename.getBytes(), 0, requestInBytes, 0, filename.getBytes().length);
-//        requestInBytes[filename.length()] = 0x00;
-//        for ( int i = 0; i < chunkList.length; i++ ) {
-//            System.arraycopy(IntToByteArray(chunkList[i]), 0, requestInBytes, filename.length() + 1 + i*4, 4);
-//        }
+        int indexIntoByteArray = InsertNullTerminatedString(requestInBytes, 0, filename);
+        indexIntoByteArray = IntArrayToByteArray(requestInBytes, indexIntoByteArray, chunkList);
 
         return requestInBytes;
     }
@@ -70,17 +61,5 @@ public class ChunkListResponse extends Util {
         byte[] rawChunkList = new byte[chunkListLength];
         System.arraycopy(data, indexIntoByteArray[0], rawChunkList, 0, chunkListLength);
         chunkList = ByteArrayToIntArray(rawChunkList);
-
-//        int StringLength = 0;
-//        while ( data[StringLength] != 0x00 ) {
-//            StringLength++;
-//        }
-//        byte[] stringInBytes = new byte[StringLength];
-//        System.arraycopy(data, 0, stringInBytes, 0, StringLength);
-//        filename = new String(stringInBytes);
-//        int chunkListLength = data.length - StringLength - 1;
-//        byte[] rawChunkList = new byte[chunkListLength];
-//        System.arraycopy(data, StringLength + 1, rawChunkList, 0, chunkListLength);
-//        chunkList = ByteArrayToIntArray(rawChunkList);
     }
 }

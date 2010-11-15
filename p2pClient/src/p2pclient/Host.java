@@ -20,7 +20,7 @@ public class Host extends Util implements Runnable{
     int listeningPort;
     String shareFolder;
 
-    Host(int servingClientListeningPort, String directory) {
+    public Host(int servingClientListeningPort, String directory) {
         runner = null;
         listeningPort = servingClientListeningPort;
         shareFolder = directory;
@@ -86,8 +86,7 @@ public class Host extends Util implements Runnable{
     }
 
     /*
-     * Description:
-     *   Starts a download for the given file
+     * Starts a download for the given file
      */
     public void StartDownload(String filename) {
 
@@ -95,10 +94,17 @@ public class Host extends Util implements Runnable{
     }
 
     /*
+     * Starts downloading a file from a specific peer
+     */
+    public void StartDownload(String filename, Peer peer) {
+        
+    }
+
+    /*
      * Description:
      *   Searches the tracker for a given file
      */
-    public void Search(String filename) {
-        
+    public Peer[] Search(String filename) {
+        return null;
     }
 }

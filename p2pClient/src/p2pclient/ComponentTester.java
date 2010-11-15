@@ -11,10 +11,14 @@ public class ComponentTester {
     public static String TEST_FILE_PATH_ROOT = "Z:/Class/CS657-ComputerNetworks/Git/TestFilesDir/";
 
     public static void main (String args[]) throws Exception {
-        TestTrackerRegistrationImportExport();
-        TestTrackerQueryResponseImportExport();
-        TestTrackerQueryImportExport();
-        TestUtilExtractNullTerminatedString();
+        TestChunkListRequestImportExport();
+        TestChunkListResponseImportExport();
+        TestChunkRequestImportExport();
+        TestChunkResponseImportExport();
+//        TestTrackerRegistrationImportExport();
+//        TestTrackerQueryResponseImportExport();
+//        TestTrackerQueryImportExport();
+//        TestUtilExtractNullTerminatedString();
     }
 
     private static void TestTrackerRegistrationImportExport() throws Exception {
@@ -181,6 +185,92 @@ public class ComponentTester {
                 System.out.println("Iteration " + i + ": NULL");
             }
         }
+    }
+
+    private static void TestChunkListRequestImportExport() {
+        String filename = "Testfilename.ext";
+        int listeningPort = 44234;
+        ChunkListRequest request = new ChunkListRequest(filename, listeningPort);
+        byte[] messageData = request.ExportMessagePayload();
+
+        System.out.println("Filename = " + request.filename +
+                ", listeningPort = " + request.receivingPort +
+                ", messageData (" + messageData.length + ")");
+        ChunkListRequest requestImport = new ChunkListRequest();
+
+        requestImport.ImportMessagePayload(messageData);
+
+        System.out.println("Filename = " + requestImport.filename +
+                ", listeningPort = " + requestImport.receivingPort +
+                ", messageData (" + messageData.length + ")");
+    }
+
+    private static void TestChunkListResponseImportExport() {
+        String filename = "Testfilename.ext";
+        ChunkInfo[] chunkInfoList = new ChunkInfo[5];
+        byte[] chunkHash = {0x00, 0x00, 0x00, 0x01};
+        for ( int i = 0; i < 5; i++ ) {
+            chunkInfoList[i] = new ChunkInfo(i, chunkHash, 0);
+        }
+        ChunkListResponse response = new ChunkListResponse(filename, chunkInfoList);
+        byte[] messageData = response.ExportMessagePayload();
+
+        System.out.println("Filename = " + response.filename);
+        for (int i = 0; i < response.chunkList.length; i++) {
+            System.out.println("chunk[" + i + "]");
+        }
+        ChunkListResponse responseImport = new ChunkListResponse();
+
+        responseImport.ImportMessagePayload(messageData);
+
+        System.out.println("Filename = " + response.filename);
+        for (int i = 0; i < response.chunkList.length; i++) {
+            System.out.println("chunk[" + i + "]");
+        }
+    }
+
+    private static void TestChunkRequestImportExport() {
+        String filename = "TestFilename.ext";
+        int chunkNumber = 1;
+        int listeningPort = 54321;
+        ChunkRequest request = new ChunkRequest(filename, chunkNumber, listeningPort);
+        byte[] messageData = request.ExportMessagePayload();
+
+        System.out.println("Filename = " + request.filename +
+                ", listeningPort = " + request.listeningPort +
+                ", messageData (" + messageData.length + ")");
+
+        ChunkRequest requestImport = new ChunkRequest();
+        requestImport.ImportMessagePayload(messageData);
+
+        System.out.println("Filename = " + requestImport.filename +
+                ", listeningPort = " + requestImport.listeningPort +
+                ", messageData (" + messageData.length + ")");
+
+    }
+
+    private static void TestChunkResponseImportExport() {
+        String filename = "TestFilename.ext";
+        int chunkNumber = 1;
+        int listeningPort = 54321;
+        byte[] chunkData = {0, 1, 2, 3, 4, 5};
+        ChunkResponse response = new ChunkResponse(filename, chunkNumber, chunkData);
+        byte[] messageData = response.ExportMessagePayload();
+
+        System.out.println("Filename = " + response.filename +
+                ", chunkNumber = " + response.chunkNumber +
+                ", chunkData (" + response.chunkData.length + ")" +
+                ", messageData (" + messageData.length + ")");
+
+        ChunkResponse responseImport = new ChunkResponse();
+        responseImport.ImportMessagePayload(messageData);
+
+        System.out.println("Filename = " + responseImport.filename +
+                ", chunkNumber = " + responseImport.chunkNumber +
+                ", chunkData (" + responseImport.chunkData.length + ")" +
+                ", messageData (" + messageData.length + ")");
+
+        
     }
 }
 
