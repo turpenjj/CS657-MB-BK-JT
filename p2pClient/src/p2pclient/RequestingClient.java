@@ -73,11 +73,13 @@ public class RequestingClient extends Util implements Runnable {
                                 ProcessChunkResponse(data);
                                 break;
                         }
+                        RemoveListenerFromList(listenerList[i]);
                         break;
                     case 2: //timeout
                         if ( packetType == PacketType.CHUNK_RESPONSE ) {
                             chunkManager.chunkList[listenerList[i].chunkNumber].chunkInfo.status = 0;
                         }
+                        RemoveListenerFromList(listenerList[i]);
                         break;
                 }
                 
@@ -106,18 +108,26 @@ public class RequestingClient extends Util implements Runnable {
     }
 
     private void AddListenerToList(Listener newListener) {
-        Listener[] tempListenerList = new Listener[listenerList.length + 1];
-        System.arraycopy(listenerList, 0, tempListenerList, 0, listenerList.length);
-        listenerList = tempListenerList;
+        if ( listenerList == null ) {
+            listenerList = new Listener[1];
+        } else {
+            Listener[] tempListenerList = new Listener[listenerList.length + 1];
+            System.arraycopy(listenerList, 0, tempListenerList, 0, listenerList.length);
+            listenerList = tempListenerList;
+        }
         listenerList[listenerList.length - 1] = newListener;
     }
 
     private void RemoveListenerFromList(Listener listenerToRemove) {
-        Listener[] tempListenerList = new Listener[listenerList.length - 1];
-        int listenerIndex = FindListenerIndex(listenerToRemove);
-        System.arraycopy(listenerList, 0, tempListenerList, 0, listenerIndex);
-        System.arraycopy(listenerList, listenerIndex + 1, tempListenerList, listenerIndex, tempListenerList.length - listenerIndex);
-        listenerList = tempListenerList;
+        if ( listenerList.length == 1 ) {
+            listenerList = null;
+        } else {
+            Listener[] tempListenerList = new Listener[listenerList.length - 1];
+            int listenerIndex = FindListenerIndex(listenerToRemove);
+            System.arraycopy(listenerList, 0, tempListenerList, 0, listenerIndex);
+            System.arraycopy(listenerList, listenerIndex + 1, tempListenerList, listenerIndex, tempListenerList.length - listenerIndex);
+            listenerList = tempListenerList;
+        }
     }
 
     private Listener FindListener(int sessionID) {
@@ -137,9 +147,10 @@ public class RequestingClient extends Util implements Runnable {
     private void RequestChunkList() {
         Listener newListener = new Listener(PacketType.CHUNK_LIST_RESPONSE, nextSessionID++, -1, DEFAULT_LISTEN_TIMEOUT);
         AddListenerToList(newListener);
-
+System.out.println("Sending out a new chunk list request");
         ChunkListRequest chunkListRequest = new ChunkListRequest(filename, newListener.listener.listeningPort);
-        SendCommunication(servingHost, PacketType.CHUNK_LIST_REQUEST, newListener.sessionID, chunkListRequest.ExportMessagePayload());
+        MessageSend sender = new MessageSend();
+        sender.SendCommunication(servingHost, PacketType.CHUNK_LIST_REQUEST, newListener.sessionID, chunkListRequest.ExportMessagePayload());
     }
 
     /*
@@ -152,7 +163,8 @@ public class RequestingClient extends Util implements Runnable {
 
         ChunkRequest chunkRequest = new ChunkRequest(filename, chunkNumber, newListener.listener.listeningPort);
         chunkManager.chunkList[chunkNumber].chunkInfo.status = 1; //downloading
-        SendCommunication(servingHost, PacketType.CHUNK_REQUEST, newListener.sessionID, chunkRequest.ExportMessagePayload());
+        MessageSend sender = new MessageSend();
+        sender.SendCommunication(servingHost, PacketType.CHUNK_REQUEST, newListener.sessionID, chunkRequest.ExportMessagePayload());
     }
 
     /*
@@ -193,7 +205,7 @@ public class RequestingClient extends Util implements Runnable {
 
 }
 
-class Listener extends Util {
+class Listener {
     MessageReceive listener;
     PacketType requestType;
     int sessionID;
@@ -202,10 +214,12 @@ class Listener extends Util {
     private int status; //0 = listening, 1 = messageAvailable, 2 = timedOut
 
     Listener(PacketType requestType, int sessionID, int chunkNumber, int timeoutValue) {
+        PacketType[] packetType = {requestType};
+        this.listener = new MessageReceive(packetType);
         this.requestType = requestType;
         this.sessionID = sessionID;
         this.chunkNumber = chunkNumber;
-        this.timeout = GetCurrentTime() + timeoutValue;
+        this.timeout = Util.GetCurrentTime() + timeoutValue;
         this.status = 0;
     }
 
@@ -213,7 +227,7 @@ class Listener extends Util {
         boolean messageAvailable = listener.GetMessage(sessionID, null, null, packetType, null, packetData);
         if ( messageAvailable == true ) {
             status = 1;
-        } else if ( GetCurrentTime() > timeout ) {
+        } else if ( Util.GetCurrentTime() > timeout ) {
             //TODO: Implement stop() method for MessageReceive
 //            listener.stop();
             status = 2;

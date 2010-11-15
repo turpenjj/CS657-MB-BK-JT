@@ -5,6 +5,7 @@
 
 package p2pclient;
 
+import java.net.*;
 
 /**
  *
@@ -80,7 +81,12 @@ public class Host extends Util implements Runnable{
             System.arraycopy(IntToByteArray(4*i), 0, hash, 12, 4);
             System.arraycopy(IntToByteArray(5*i), 0, hash, 16, 4);
             allChunks[i] = new ChunkInfo(i, hash, 0);
-            allChunks[i].receivedFrom = new Peer(0xc0a80101 + i, 1000 + i);
+            byte[] IPinBytes = IntToByteArray(0xc0a80101 + i);
+            try {
+                allChunks[i].receivedFrom = new Peer(InetAddress.getByAddress(IPinBytes), 1000 + i);
+            } catch ( UnknownHostException e ) {
+                System.out.println("Unknown host: " + e);
+            }
         }
         return allChunks;
     }

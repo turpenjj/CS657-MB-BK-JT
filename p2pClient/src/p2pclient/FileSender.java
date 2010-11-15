@@ -19,8 +19,8 @@ public class FileSender extends Util {
     {
         Host myHost = new Host(5, "dir");
         myHost.start();
-        int peerIp = ByteArrayToInt(InetAddress.getByName("192.168.1.100").getAddress());
-        Peer myPeer = new Peer(peerIp, 9876);
+//        int peerIp = ByteArrayToInt(InetAddress.getByName("192.168.1.100").getAddress());
+        Peer myPeer = new Peer(InetAddress.getByName("192.168.1.100"), 9876);
 //        myReq = new RequestingClient(myPeer, "devlist.txt");
 //        myReq1 = new RequestingClient(myPeer, "devlis1t.txt");
 

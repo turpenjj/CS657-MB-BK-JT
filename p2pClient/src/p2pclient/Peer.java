@@ -5,19 +5,20 @@
 
 package p2pclient;
 
+import java.net.*;
 /**
  *
  * @author Matt
  */
 public class Peer {
-    int clientIp;
+    InetAddress clientIp;
     int listeningPort;
     String[] fileList;
     int[][] chunkList; //[fileIndex][chunkIndex]
     int creditForThem; //The credit associated with this peer
     int creditForUs; //An approximation of the credit this peer has for us
 
-    Peer(int ip, int port) {
+    Peer(InetAddress ip, int port) {
         clientIp = ip;
         listeningPort = port;
     }

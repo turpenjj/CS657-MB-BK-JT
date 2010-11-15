@@ -24,7 +24,19 @@ public class PeerManager {
      *   Updates (adds if missing) the peer information in the PeerManager
      */
     public void UpdatePeer(Peer peerToUpdate) {
+        if ( (peerToUpdate = FindPeerInList(peerToUpdate)) == null ) {
+            AddPeerToList(peerToUpdate);
+        }
 
+    }
+
+    private void AddPeerToList(Peer peerToAdd) {
+        if ( peerList == null ) {
+            peerList = new Peer[1];
+        } else {
+            peerList = new Peer[peerList.length + 1];
+        }
+        peerList[peerList.length - 1] = peerToAdd;
     }
 
     public void AddCreditForUsToPeer(Peer peerToUpdate) {

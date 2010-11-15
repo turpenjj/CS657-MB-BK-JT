@@ -1,5 +1,7 @@
 package p2pclient;
 
+import java.net.*;
+
 /**
  * This class defines the structures for the tracker query response message and
  * provides methods for creating such messages. The structure of the message
@@ -52,7 +54,8 @@ public class TrackerQueryResponse {
         currentIndex = Util.IntToByteArray(messageData, currentIndex, this.peerList.length);
 
         for (Peer peer : this.peerList) {
-            currentIndex = Util.IntToByteArray(messageData, currentIndex, peer.clientIp);
+            System.arraycopy(peer.clientIp.getAddress(), 0, messageData, currentIndex, 4);
+            currentIndex += 4;
             currentIndex = Util.IntToByteArray(messageData, currentIndex, peer.listeningPort);
 
             if (currentIndex >= messageData.length) {
@@ -73,7 +76,7 @@ public class TrackerQueryResponse {
         int numberOfPeers = 0;
         int currentIndex = 0;
         int dataLeft = data.length;
-        int IP;
+        byte[] IP = new byte[4];
         int port;
         Peer peer;
         int i = 0;
@@ -92,7 +95,7 @@ public class TrackerQueryResponse {
 
         this.peerList = new Peer[numberOfPeers];
         while ((dataLeft >= this.PEER_ENTRY_SIZE) && (i <= numberOfPeers)) {
-            IP = Util.ByteArrayToInt(data, currentIndex);
+            System.arraycopy(data, currentIndex, IP, 0, 4);
             currentIndex += 4;
             dataLeft -= 4;
 
@@ -100,9 +103,13 @@ public class TrackerQueryResponse {
             currentIndex += 4;
             dataLeft -= 4;
 
-            peer = new Peer(IP, port);
-            this.peerList[i] = peer;
-            i++;
+            try {
+                peer = new Peer(InetAddress.getByAddress(IP), port);
+                this.peerList[i] = peer;
+                i++;
+            } catch ( UnknownHostException e ) {
+                //TODO: shrink peerList by one...
+            }
         }
 
         return true;

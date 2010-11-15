@@ -5,8 +5,6 @@
 
 package p2pclient;
 
-import java.net.*;
-
 /**
  * Description:
  *  This class is the client program running on a p2p Host that receives,
@@ -18,7 +16,7 @@ public class ServingClient extends Util implements Runnable {
     Thread runner;
     int listeningPort;
     private MessageReceive listener;
-    private PacketType[] acceptedPackets;
+    private PacketType[] acceptedPackets = {PacketType.CHUNK_LIST_REQUEST, PacketType.CHUNK_REQUEST};
     private ChunkManager[] chunkManagers;
     private PeerManager peerManager;
 
@@ -48,7 +46,8 @@ public class ServingClient extends Util implements Runnable {
         }
 
         //Spin up a thread for listening on the socket.
-        CreateListener();
+        listener = new MessageReceive(listeningPort, acceptedPackets, true);
+        listener.start();
 
         //Continually poll the listener for requests, then determine if we want
         //to respond and respond if we want
@@ -59,6 +58,7 @@ public class ServingClient extends Util implements Runnable {
             Peer peer = null;
             byte[] packetData = null;
             if ( listener.GetMessage(0, acceptedPackets, peer, packetType, sessionID, packetData)) {
+                peerManager.UpdatePeer(peer);
                 switch (packetType) {
                     case CHUNK_LIST_REQUEST:
                         ChunkListRequest chunkListRequest = new ChunkListRequest();
@@ -85,7 +85,8 @@ public class ServingClient extends Util implements Runnable {
             chunkManager = chunkManagers[chunkManagerIndex++].FindChunkManager(chunkListRequest.filename);
         }
         ChunkListResponse chunkListResponse = new ChunkListResponse(chunkManager.filename, chunkManager.AvailableChunks());
-        SendCommunication(peer, PacketType.CHUNK_LIST_RESPONSE, sessionID, chunkListResponse.ExportMessagePayload());
+        MessageSend sender = new MessageSend();
+        sender.SendCommunication(peer, PacketType.CHUNK_LIST_RESPONSE, sessionID, chunkListResponse.ExportMessagePayload());
     }
 
     private void SendChunkResponse(Peer peer, ChunkRequest chunkRequest, int sessionID) {
@@ -95,36 +96,8 @@ public class ServingClient extends Util implements Runnable {
             chunkManager = chunkManagers[chunkManagerIndex++].FindChunkManager(chunkRequest.filename);
         }
         ChunkResponse chunkResponse = new ChunkResponse(chunkManager.filename, chunkRequest.chunkNumber, chunkManager.GetChunkData(chunkRequest.chunkNumber));
-        SendCommunication(peer, PacketType.CHUNK_RESPONSE, sessionID, chunkResponse.ExportMessagePayload());
-    }
-
-
-    /*
-     * Description:
-     *   Creates and binds a socket for receiving new requests
-     */
-    private void CreateListener() {
-        acceptedPackets = new PacketType[2];
-        acceptedPackets[0] = PacketType.CHUNK_LIST_REQUEST;
-        acceptedPackets[1] = PacketType.CHUNK_REQUEST;
-        listener = new MessageReceive(listeningPort, acceptedPackets);
-        listener.start();
-    }
-
-    /*
-     * Description:
-     *   Responds to a Chunk List Request
-     */
-    private void HandleChunkListRequest() {
-        
-    }
-
-    /*
-     * Description:
-     *   Responds to a Chunk Request
-     */
-    private void HandleChunkRequest() {
-        
+        MessageSend sender = new MessageSend();
+        sender.SendCommunication(peer, PacketType.CHUNK_RESPONSE, sessionID, chunkResponse.ExportMessagePayload());
     }
 
     /*

@@ -22,11 +22,13 @@ public class MessageReceive extends Util implements Runnable {
     private int MAX_PORT_NUMBER = 65535;
     public int listeningPort;
 
-    MessageReceive(int listeningPort, PacketType[] acceptedPacketTypes) {
+    MessageReceive(int listeningPort, PacketType[] acceptedPacketTypes, boolean permanent) {
         this.acceptedPacketTypes = acceptedPacketTypes;
         try {
             this.listeningSocket = new DatagramSocket(listeningPort);
-            this.listeningSocket.setSoTimeout(this.SOCKET_TIMEOUT_MS);
+            if ( !permanent ) {
+                this.listeningSocket.setSoTimeout(this.SOCKET_TIMEOUT_MS);
+            }
         } catch ( IOException e ) {
             System.out.println("Receieved socket error: " + e);
         }

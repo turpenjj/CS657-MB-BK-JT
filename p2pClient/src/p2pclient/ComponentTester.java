@@ -8,9 +8,10 @@ import java.net.*;
  * @author Jeremy
  */
 public class ComponentTester {
-    public static String TEST_FILE_PATH_ROOT = "Z:/Class/CS657-ComputerNetworks/Git/TestFilesDir/";
+    public static String TEST_FILE_PATH_ROOT = "D:/GradSchool/C657-Networking/Project/GitHubRepo/p2pClient/TestFilesDir/";
 
     public static void main (String args[]) throws Exception {
+//        TestServingClient();
         TestChunkListRequestImportExport();
         TestChunkListResponseImportExport();
         TestChunkRequestImportExport();
@@ -110,8 +111,8 @@ public class ComponentTester {
         }
 
         TrackerRegistration trackerRegistrationImport = new TrackerRegistration();
-        Peer peer1 = new Peer(trackerRegistration.peer.clientIp + 1, 0);
-        Peer peer2 = new Peer(trackerRegistration2.peer.clientIp + 2, 0);
+        Peer peer1 = new Peer(trackerRegistration.peer.clientIp, 0);
+        Peer peer2 = new Peer(trackerRegistration2.peer.clientIp, 0);
         trackerRegistrationImport.ImportMessage(peer1, messageData);
         
         Thread.sleep((long)(trackerRegistrationImport.PEER_TIMEOUT_MSEC * 0.5));
@@ -130,7 +131,7 @@ public class ComponentTester {
         if (peers == null || peers.length == 0) {
             System.out.println("Error: 'Set' test set should still be present");
         } else {
-            if (peers[0].clientIp == trackerRegistration2.peer.clientIp + 2 &&
+            if (peers[0].clientIp == trackerRegistration2.peer.clientIp &&
                     peers[0].listeningPort == trackerRegistration2.peer.listeningPort) {
                 System.out.println("Success: Found 'Set1' file from the correct host");
             } else {
@@ -147,7 +148,7 @@ public class ComponentTester {
         if (peers == null || peers.length == 0) {
             System.out.println("Error: 'Test' test set should still be present");
         } else {
-            if (peers[0].clientIp == trackerRegistration.peer.clientIp + 1 &&
+            if (peers[0].clientIp == trackerRegistration.peer.clientIp &&
                     peers[0].listeningPort == trackerRegistration.peer.listeningPort) {
                 System.out.println("Success: Found 'Test4' file from the correct host");
             } else {
@@ -158,7 +159,7 @@ public class ComponentTester {
         if (peers != null && peers.length == 0) {
             System.out.println("Error: 'Set' test set should still be present");
         } else {
-            if (peers[0].clientIp == trackerRegistration2.peer.clientIp + 2 &&
+            if (peers[0].clientIp == trackerRegistration2.peer.clientIp &&
                     peers[0].listeningPort == trackerRegistration2.peer.listeningPort) {
                 System.out.println("Success: Found 'Set1' file from the correct host");
             } else {
@@ -205,7 +206,7 @@ public class ComponentTester {
         byte[] messageData;
 
         for (i = 0; i < peerList.length; i++) {
-            peerList[i] = new Peer(currentIP, currentPort);
+            peerList[i] = new Peer(InetAddress.getByAddress(startingIPbyte), currentPort);
             currentIP += 3;
             currentPort += 127;
         }
@@ -219,9 +220,9 @@ public class ComponentTester {
 
             i = 0;
             for (Peer peer : trackerQueryResponseImport.peerList) {
-                byte[] bytes = Util.IntToByteArray(peer.clientIp);
-                IP = InetAddress.getByAddress(bytes);
-                System.out.println(i + ": IP = " + IP + "; Port = " + peer.listeningPort);
+//                byte[] bytes = Util.IntToByteArray(peer.clientIp);
+                IP = peer.clientIp;
+                System.out.println(i + ": IP = " + IP.getHostAddress() + "; Port = " + peer.listeningPort);
                 i++;
             }
         } else {
@@ -332,5 +333,38 @@ public class ComponentTester {
                 ", messageData (" + messageData.length + ")");
     }
 
+    private static void TestServingClient() {
+        int listeningPort = 54321;
+        ChunkManager[] chunkManagers = new ChunkManager[5];
+        PeerManager peerManager = new PeerManager();
+
+        //Initialize chunkManagers;
+        for ( int i = 0; i < 5; i++) {
+            chunkManagers[i] = new ChunkManager("Filename" + i);
+            chunkManagers[i].chunkList = new FileChunk[2];
+            byte[] tempHash = {(byte)i,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
+            chunkManagers[i].chunkList[0] = new FileChunk(0, tempHash, 0);
+            byte[] tempHash2 = {0,(byte)i,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
+            chunkManagers[i].chunkList[1] = new FileChunk(1, tempHash2, 1);
+            chunkManagers[i].chunkList[1].chunk = new byte[3];
+            chunkManagers[i].chunkList[1].chunk[0] = (byte)i;
+            chunkManagers[i].chunkList[1].chunk[1] = (byte)2;
+            chunkManagers[i].chunkList[1].chunk[2] = (byte)i;
+        }
+
+        ServingClient servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
+        servingClient.start();
+
+        try {
+            Peer dummyPeer = new Peer(InetAddress.getLocalHost(), 51515);
+            peerManager.UpdatePeer(dummyPeer);
+            Peer peer = new Peer(InetAddress.getLocalHost(), 54321);
+            RequestingClient requestingClient = new RequestingClient(peer, "Filename1", chunkManagers[1]);
+            requestingClient.start();
+        } catch ( UnknownHostException e ) {
+            System.out.println("We're in trouble... we can't find ourself " + e);
+        }
+//        System.out.println("peerList (" + peerManager.peerList.length + ")");
+    }
 }
 

@@ -35,9 +35,8 @@ public class TrackerRegistration {
      */
     TrackerRegistration(int listeningPort) throws Exception {
         InetAddress inetAddr = InetAddress.getLocalHost();
-        int ip = Util.ByteArrayToInt(inetAddr.getAddress());
 
-        this.peer = new Peer(ip, listeningPort);
+        this.peer = new Peer(inetAddr, listeningPort);
     }
 
     /**

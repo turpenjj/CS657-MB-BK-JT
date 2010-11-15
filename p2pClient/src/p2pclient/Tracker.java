@@ -48,7 +48,7 @@ public class Tracker extends Util implements Runnable {
 
         System.out.println("Started a Tracker thread on port " + this.listeningPort);
 
-        this.messageReceiver = new MessageReceive(this.listeningPort, this.acceptedPacketTypes);
+        this.messageReceiver = new MessageReceive(this.listeningPort, this.acceptedPacketTypes, true);
 
         for (;;) {
             if (this.messageReceiver.GetMessage(0, this.acceptedPacketTypes, peer, packetType, sessionID, messageData)) {

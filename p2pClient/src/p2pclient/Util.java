@@ -144,46 +144,46 @@ public class Util {
         return intArray;
     }
 
-    public static boolean SendPacket(Peer peer, byte[] payload) {
-        int SOCKET_TIMEOUT = 15000;
-        try {
-           DatagramSocket sendingSocket = new DatagramSocket();
-           InetAddress IPAddress = InetAddress.getByAddress(IntToByteArray(peer.clientIp));
-           int port = peer.listeningPort;
-
-           DatagramPacket packetToSend = new DatagramPacket(payload, payload.length, IPAddress, port);
-
-           sendingSocket.setSoTimeout(SOCKET_TIMEOUT);
-           sendingSocket.send(packetToSend);
-           sendingSocket.close();
-        } catch ( IOException e ) {
-            System.out.println("SendPacket Error: " + e);
-            return false;
-        }
-        return true;
-    }
-
-    public static int ReceivePacket(Peer peer, int receivingPort, byte[] receivedData) {
-        int SOCKET_TIMEOUT = 15000;
-        int lengthReceived = 0;
-        int MAX_PACKET_SIZE = 1500;
-        receivedData = new byte[MAX_PACKET_SIZE];
-        
-        try {
-            DatagramSocket receivingSocket = new DatagramSocket(receivingPort);
-            DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
-
-            receivingSocket.setSoTimeout(SOCKET_TIMEOUT);
-            receivingSocket.receive(receivedPacket);
-            InetAddress senderIP = receivedPacket.getAddress();
-
-            peer.clientIp = ByteArrayToInt(senderIP.getAddress());
-            lengthReceived = receivedPacket.getLength();
-        } catch ( IOException e ) {
-            System.out.println("ReceivePacket Error: " + e);
-        }
-        return lengthReceived;
-    }
+//    public static boolean SendPacket(Peer peer, byte[] payload) {
+//        int SOCKET_TIMEOUT = 15000;
+//        try {
+//           DatagramSocket sendingSocket = new DatagramSocket();
+//           InetAddress IPAddress = peer.clientIp;
+//           int port = peer.listeningPort;
+//
+//           DatagramPacket packetToSend = new DatagramPacket(payload, payload.length, IPAddress, port);
+//
+//           sendingSocket.setSoTimeout(SOCKET_TIMEOUT);
+//           sendingSocket.send(packetToSend);
+//           sendingSocket.close();
+//        } catch ( IOException e ) {
+//            System.out.println("SendPacket Error: " + e);
+//            return false;
+//        }
+//        return true;
+//    }
+//
+//    public static int ReceivePacket(Peer peer, int receivingPort, byte[] receivedData) {
+//        int SOCKET_TIMEOUT = 15000;
+//        int lengthReceived = 0;
+//        int MAX_PACKET_SIZE = 1500;
+//        receivedData = new byte[MAX_PACKET_SIZE];
+//
+//        try {
+//            DatagramSocket receivingSocket = new DatagramSocket(receivingPort);
+//            DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
+//
+//            receivingSocket.setSoTimeout(SOCKET_TIMEOUT);
+//            receivingSocket.receive(receivedPacket);
+//            InetAddress senderIP = receivedPacket.getAddress();
+//
+//            peer.clientIp = senderIP;
+//            lengthReceived = receivedPacket.getLength();
+//        } catch ( IOException e ) {
+//            System.out.println("ReceivePacket Error: " + e);
+//        }
+//        return lengthReceived;
+//    }
 
 //    public static int ReceiveCommunication(Peer peer, int receivingPort, byte[] receivedData) {
 //        int bytesRead;
@@ -217,21 +217,6 @@ public class Util {
 //        return totalBytesReceived;
 //    }
 
-    /*
-     * Handles dividing a message and its data into individual packets and sending them to a peer.
-     */
-    public void SendCommunication(Peer peer, PacketType packetType, int sessionID, byte[] sendData) {
-        // create the sending socket
-        // loop through the data and call SendPacket() for each chunk
-    }
-
-    /*
-     * Creates and sends an individual packet out a socket.
-     */
-    private void SendPacket(DatagramSocket sendingSocket, PacketHeader packetHeader, byte[] packetData) {
-        // create the packet
-        // send the packet
-    }
 
     public static long GetCurrentTime() {
         return (Calendar.getInstance()).getTimeInMillis();
