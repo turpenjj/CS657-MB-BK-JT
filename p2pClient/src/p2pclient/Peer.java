@@ -21,6 +21,10 @@ public class Peer {
     Peer(InetAddress ip, int port) {
         clientIp = ip;
         listeningPort = port;
+        creditForThem = 0;
+        creditForUs = 0;
+        fileList = null;
+        chunkList = null;
     }
 
     /*
