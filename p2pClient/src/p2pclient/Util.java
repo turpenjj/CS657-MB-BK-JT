@@ -70,6 +70,20 @@ public class Util {
                 ((b[startingIndex + 3] & 0xFF) << 0));
     }
 
+    public static int InetAddressToInt(InetAddress addr) {
+        if (addr == null) {
+            return 0;
+        }
+
+        byte[] bytes = addr.getAddress();
+
+        if (bytes == null) {
+            return 0;
+        }
+
+        return Util.ByteArrayToInt(bytes);
+    }
+
     /**
      *
      * @param b Byte array to extract a null-terminated ASCII string from
