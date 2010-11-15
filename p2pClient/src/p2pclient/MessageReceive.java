@@ -103,6 +103,10 @@ public class MessageReceive extends Util implements Runnable {
     public boolean GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer peer, PacketType packetType, int[] sessionID, byte[] packetData) {
         MessageBuffer message;
 
+        //If there are no message buffers available, obviously we don't have the message, so return null
+        if ( this.messageBuffers == null ) {
+            return false;
+        }
         if (filterSessionID != 0) {
             if ((message = this.FindMessage(filterSessionID)) != null) {
                 if (message.IsMessageComplete(peer, packetType, sessionID, packetData)) {
