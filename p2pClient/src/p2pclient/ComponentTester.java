@@ -15,10 +15,72 @@ public class ComponentTester {
         TestChunkListResponseImportExport();
         TestChunkRequestImportExport();
         TestChunkResponseImportExport();
-//        TestTrackerRegistrationImportExport();
-//        TestTrackerQueryResponseImportExport();
-//        TestTrackerQueryImportExport();
-//        TestUtilExtractNullTerminatedString();
+        TestTrackerTorrentRegistration();
+        TestTorrent();
+        TestTrackerRegistrationImportExport();
+        TestTrackerQueryResponseImportExport();
+        TestTrackerQueryImportExport();
+        TestUtilExtractNullTerminatedString();
+    }
+
+    private static void TestTrackerTorrentRegistration() throws Exception {
+        TrackerTorrentRegistration trackerRegisteredTorrents = new TrackerTorrentRegistration();
+        
+        Torrent torrent;
+        TrackerTorrentRegistration torrentRegistration;
+        byte[] messageData;
+
+        Torrent torrent2;
+        TrackerTorrentRegistration torrentRegistration2;
+        byte[] messageData2;
+
+        torrent = new Torrent(ComponentTester.TEST_FILE_PATH_ROOT, "TestFile.txt");
+        torrentRegistration = new TrackerTorrentRegistration(torrent);
+        messageData = torrentRegistration.ExportMessagePayload();
+
+        torrent2 = new Torrent(ComponentTester.TEST_FILE_PATH_ROOT, "TestFile2.txt");
+        torrentRegistration2 = new TrackerTorrentRegistration(torrent2);
+        messageData2 = torrentRegistration2.ExportMessagePayload();
+
+        trackerRegisteredTorrents.ImportMessagePayload(messageData);
+        trackerRegisteredTorrents.ImportMessagePayload(messageData2);
+
+        if (trackerRegisteredTorrents.Search("TestFile.txt") != null) {
+            System.out.println("Success: Found file");
+        } else {
+            System.out.println("Error: Failed to find file");
+        }
+        if (trackerRegisteredTorrents.Search("TestFile2.txt") != null) {
+            System.out.println("Success: Found file");
+        } else {
+            System.out.println("Error: Failed to find file");
+        }
+        if (trackerRegisteredTorrents.Search("testfile2.txt") != null) {
+            System.out.println("Success: Found file");
+        } else {
+            System.out.println("Error: Failed to find file");
+        }
+        if (trackerRegisteredTorrents.Search("UnregisteredFile") == null) {
+            System.out.println("Success: Didn't find file");
+        } else {
+            System.out.println("Error: Found file");
+        }
+
+        trackerRegisteredTorrents.DeregisterTorrent(torrent);
+        if (trackerRegisteredTorrents.Search("TestFile.txt") == null) {
+            System.out.println("Success: Didn't find file");
+        } else {
+            System.out.println("Error: Found file");
+        }
+        if (trackerRegisteredTorrents.Search("TestFile2.txt") != null) {
+            System.out.println("Success: Found file");
+        } else {
+            System.out.println("Error: Failed to find file");
+        }
+    }
+
+    private static void TestTorrent() throws Exception {
+        Torrent torrent = new Torrent(ComponentTester.TEST_FILE_PATH_ROOT, "TestFile.txt");
     }
 
     private static void TestTrackerRegistrationImportExport() throws Exception {
@@ -186,7 +248,7 @@ public class ComponentTester {
             }
         }
     }
-
+    
     private static void TestChunkListRequestImportExport() {
         String filename = "Testfilename.ext";
         int listeningPort = 44234;
@@ -246,7 +308,6 @@ public class ComponentTester {
         System.out.println("Filename = " + requestImport.filename +
                 ", listeningPort = " + requestImport.listeningPort +
                 ", messageData (" + messageData.length + ")");
-
     }
 
     private static void TestChunkResponseImportExport() {
@@ -269,8 +330,7 @@ public class ComponentTester {
                 ", chunkNumber = " + responseImport.chunkNumber +
                 ", chunkData (" + responseImport.chunkData.length + ")" +
                 ", messageData (" + messageData.length + ")");
-
-        
     }
+
 }
 
