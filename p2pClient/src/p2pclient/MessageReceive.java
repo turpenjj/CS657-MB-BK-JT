@@ -12,6 +12,8 @@ import java.net.*;
 public class MessageReceive extends Util implements Runnable {
     private Thread runner;
     private volatile boolean stop = false;
+    private boolean permanent;
+    private boolean stopOnGet;
     private DatagramSocket listeningSocket;
     private MessageBuffer[] messageBuffers;
     private PacketHeader[] headers;
@@ -29,6 +31,9 @@ public class MessageReceive extends Util implements Runnable {
             this.listeningSocket = new DatagramSocket(listeningPort);
             if ( !permanent ) {
                 this.listeningSocket.setSoTimeout(this.SOCKET_TIMEOUT_MS);
+                this.permanent = false;
+            } else {
+                this.permanent = true;
             }
         } catch ( IOException e ) {
             System.out.println("Receieved socket error: " + e);
@@ -43,6 +48,7 @@ public class MessageReceive extends Util implements Runnable {
                 this.listeningSocket = new DatagramSocket(this.listeningPort);
                 System.out.println("Opened a socket on port " + this.listeningPort);
                 this.listeningSocket.setSoTimeout(this.SOCKET_TIMEOUT_MS);
+                this.permanent = false;
                 break;
             } catch ( IOException e ) {
                 this.listeningPort += 1;
@@ -80,8 +86,6 @@ public class MessageReceive extends Util implements Runnable {
                 receivedPacketData = packetInData[0];
                 boolean accept = false;
                 for (PacketType type : this.acceptedPacketTypes) {
-//                    int[] temp = new int[1];
-//                    System.out.println("String: " + Util.ExtractNullTerminatedString(receivedPacketData, 4, temp));
                     if (packetHeader[0].packetType == type) {
                         accept = true;
                     } else {
@@ -122,12 +126,17 @@ public class MessageReceive extends Util implements Runnable {
         //Need to yield to allow this.messageBuffers to be updated....
         Thread.currentThread().yield();
         byte[] messageData = null;
+        //If the socket timed out and this isn't a permanent listener, stop the thread after processing their GetMessage
+        if ( stopOnGet ) {
+            stop = true;
+        }
 
         if (filterSessionID != 0) {
             if ((message = this.FindMessage(filterSessionID)) != null) {
                 if ( (messageData = message.IsMessageComplete(peer, packetType, sessionID)) != null) {
                     // TODO: remove message from this.messageBuffers
                     RemoveMessageFromList(message);
+                    stop = true;
                     return messageData;
                 }
             }
@@ -142,6 +151,7 @@ public class MessageReceive extends Util implements Runnable {
                             System.out.println("We have a match!");
                             // TODO: remove message from this.messageBuffers
                             RemoveMessageFromList(loopMessage);
+                            stop = true;
                             Thread.yield();
                             return messageData;
                         }
@@ -233,64 +243,12 @@ public class MessageReceive extends Util implements Runnable {
             System.arraycopy(data, 16, packetData[0], 0, packetData[0].length);
             return 0;
         } catch ( IOException e ) {
+            if ( !this.permanent ) {
+                this.stopOnGet = true;
+            }
 //            System.out.println("ReceivePacket error: " + e);
 //
             return -1;
         }
     }
-
-//    public static int ReceivePacket(Peer peer, int receivingPort, byte[] receivedData) {
-//        int SOCKET_TIMEOUT = 15000;
-//        int lengthReceived = 0;
-//        int MAX_PACKET_SIZE = 1500;
-//        receivedData = new byte[MAX_PACKET_SIZE];
-//
-//        try {
-//            DatagramSocket receivingSocket = new DatagramSocket(receivingPort);
-//            DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
-//
-//            receivingSocket.setSoTimeout(SOCKET_TIMEOUT);
-//            receivingSocket.receive(receivedPacket);
-//            InetAddress senderIP = receivedPacket.getAddress();
-//
-//            peer.clientIp = ByteArrayToInt(senderIP.getAddress());
-//            lengthReceived = receivedPacket.getLength();
-//        } catch ( IOException e ) {
-//            System.out.println("ReceivePacket Error: " + e);
-//        }
-//        return lengthReceived;
-//    }
-//
-//    public static int ReceiveCommunication(Peer peer, int receivingPort, byte[] receivedData) {
-//        int bytesRead;
-//        int totalBytesReceived = 0;
-//        int sessionID = -1;
-//        byte[] rawReceivedData;
-//        byte[] tempArray = new byte[16];
-//        int[] rawPacketHeader;
-//        PacketHeader packetHeader;
-//
-//        do {
-//            rawReceivedData = null;
-//            bytesRead = ReceivePacket(peer, receivingPort, rawReceivedData);
-//            if ( bytesRead < 16 ) {
-//                return 0;
-//            }
-//            System.arraycopy(rawReceivedData, 0, tempArray, 0, 16);
-//            rawPacketHeader = ByteArrayToIntArray(tempArray);
-//            packetHeader = new PacketHeader(rawPacketHeader[0], rawPacketHeader[1], rawPacketHeader[2], rawPacketHeader[3]);
-//
-//            if ( sessionID == -1 ) {
-//                sessionID = packetHeader.sessionID;
-//                receivedData = new byte[packetHeader.totalSize];
-//            } else if ( sessionID != packetHeader.sessionID ) {
-//                System.out.println("Received packet for the wrong session");
-//                return 0;
-//            }
-//            System.arraycopy(rawReceivedData, 16, receivedData, packetHeader.offset, bytesRead - 16);
-//            totalBytesReceived += bytesRead - 16;
-//        } while ( totalBytesReceived < packetHeader.totalSize ) ;
-//        return totalBytesReceived;
-//    }
-
 }
