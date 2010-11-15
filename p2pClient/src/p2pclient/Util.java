@@ -54,7 +54,7 @@ public class Util {
             return index;
         }
         for ( int i = 0; i < value.length; i++ ) {
-            IntToByteArray(b, i*4, value[i]);
+            IntToByteArray(b, index + i*4, value[i]);
         }
         return index + 4*value.length;
     }
