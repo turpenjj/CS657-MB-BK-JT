@@ -56,21 +56,22 @@ System.out.println("ServingClient listening on port " + listeningPort);
             int[] sessionID = new int[1];
             sessionID[0] = 0;
             Peer[] peer = new Peer[1];
-            byte[][] packetInData = new byte[1][];
-            if ( listener.GetMessage(0, acceptedPackets, peer, packetType, sessionID, packetInData)) {
-                byte[] packetData = packetInData[0];
-                System.out.println("Got a message: " + Util.ConvertToHex(packetData) + " from " + peer[0].clientIp);
+            byte[] messageData = null;
+            if ( (messageData = listener.GetMessage(0, acceptedPackets, peer, packetType, sessionID)) != null ) {
+                System.out.println("Got a message: " + Util.ConvertToHex(messageData) + "(" + sessionID[0] + ") from " + peer[0].clientIp);
                 peerManager.UpdatePeer(peer[0]);
                 switch (packetType[0]) {
                     case CHUNK_LIST_REQUEST:
                         ChunkListRequest chunkListRequest = new ChunkListRequest();
-                        chunkListRequest.ImportMessagePayload(packetData);
+                        chunkListRequest.ImportMessagePayload(messageData);
+                        peer[0].listeningPort = chunkListRequest.receivingPort;
                         SendChunkListResponse(peer[0], chunkListRequest, sessionID[0]);
                         break;
                     case CHUNK_REQUEST:
                         if ( peerManager.ShouldTradeWith(peer[0]) ) {
                             ChunkRequest chunkRequest = new ChunkRequest();
-                            chunkRequest.ImportMessagePayload(packetData);
+                            chunkRequest.ImportMessagePayload(messageData);
+                            peer[0].listeningPort = chunkRequest.listeningPort;
                             SendChunkResponse(peer[0], chunkRequest, sessionID[0]);
                             peerManager.AddCreditForUsToPeer(peer[0]);
                         }
@@ -92,6 +93,7 @@ System.out.println("ServingClient listening on port " + listeningPort);
         }
         ChunkListResponse chunkListResponse = new ChunkListResponse(chunkManager.filename, chunkManager.AvailableChunks());
         MessageSend sender = new MessageSend();
+        System.out.println("servingClient: sending out chunk list response");
         sender.SendCommunication(peer, PacketType.CHUNK_LIST_RESPONSE, sessionID, chunkListResponse.ExportMessagePayload());
     }
 

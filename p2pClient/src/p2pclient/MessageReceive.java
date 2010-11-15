@@ -76,6 +76,7 @@ public class MessageReceive extends Util implements Runnable {
             MessageBuffer messageBuff;
 
             if ( ReceivePacket(peer, packetHeader, packetInData) != -1 ) {
+                System.out.println("MessageReceive: received a packet");
                 receivedPacketData = packetInData[0];
                 boolean accept = false;
                 for (PacketType type : this.acceptedPacketTypes) {
@@ -115,42 +116,44 @@ public class MessageReceive extends Util implements Runnable {
      *
      * @return true if a message was found and output parameters are populated, false otherwise
      */
-    public boolean GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer[] peer, PacketType[] packetType, int[] sessionID, byte[][] packetData) {
+    public synchronized byte[] GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer[] peer, PacketType[] packetType, int[] sessionID) {
         MessageBuffer message;
 
         //Need to yield to allow this.messageBuffers to be updated....
         Thread.currentThread().yield();
+        byte[] messageData = null;
 
         if (filterSessionID != 0) {
             if ((message = this.FindMessage(filterSessionID)) != null) {
-                if (message.IsMessageComplete(peer, packetType, sessionID, packetData)) {
+                if ( (messageData = message.IsMessageComplete(peer, packetType, sessionID)) != null) {
                     // TODO: remove message from this.messageBuffers
                     RemoveMessageFromList(message);
-                    return true;
+                    return messageData;
                 }
             }
         } else {
-            if (this.messageBuffers != null ) {
-                for (MessageBuffer loopMessage : this.messageBuffers) {
-                    if (loopMessage.IsMessageComplete(peer, packetType, sessionID, packetData)) {
-                        for (PacketType type : this.acceptedPacketTypes) {
-                            System.out.println("Checking " + type + " vs " + packetType[0]);
-                            if (packetType != null && packetType[0] == type) {
-                                System.out.println("We have a match!");
-                                // TODO: remove message from this.messageBuffers
-                                RemoveMessageFromList(loopMessage);
-                                return true;
-                            }
+            for ( int i = 0; this.messageBuffers != null && i < this.messageBuffers.length; i++ ) {
+//            for (MessageBuffer loopMessage : this.messageBuffers) {
+                MessageBuffer loopMessage = this.messageBuffers[i];
+                if ( (messageData = loopMessage.IsMessageComplete(peer, packetType, sessionID)) != null ) {
+                    for (PacketType type : this.acceptedPacketTypes) {
+                        System.out.println("Checking " + type + " vs " + packetType[0]);
+                        if (packetType != null && packetType[0] == type) {
+                            System.out.println("We have a match!");
+                            // TODO: remove message from this.messageBuffers
+                            RemoveMessageFromList(loopMessage);
+                            Thread.yield();
+                            return messageData;
                         }
                     }
                 }
             }
         }
 
-        return false;
+        return null;
     }
 
-    private void AddToMessageList(MessageBuffer messageToAdd) {
+    private synchronized void AddToMessageList(MessageBuffer messageToAdd) {
         if ( this.messageBuffers == null ) {
             this.messageBuffers = new MessageBuffer[1];
         } else {
@@ -161,21 +164,25 @@ public class MessageReceive extends Util implements Runnable {
         this.messageBuffers[this.messageBuffers.length - 1] = messageToAdd;
     }
 
-    private void RemoveMessageFromList(MessageBuffer messageToRemove) {
+    private synchronized MessageBuffer RemoveMessageFromList(MessageBuffer messageToRemove) {
+        MessageBuffer removedMessage = null;
         if ( this.messageBuffers.length == 1 ) {
+            removedMessage = this.messageBuffers[0];
             this.messageBuffers = null;
         } else {
             int messageIndex = FindMessageIndex(messageToRemove);
             if ( messageIndex != -1 ) {
+                removedMessage = this.messageBuffers[messageIndex];
                 MessageBuffer[] tempList = new MessageBuffer[this.messageBuffers.length - 1];
                 System.arraycopy(this.messageBuffers, 0, tempList, 0, messageIndex);
                 System.arraycopy(this.messageBuffers, messageIndex + 1, tempList, messageIndex, tempList.length - messageIndex);
                 this.messageBuffers = tempList;
             }
         }
+        return removedMessage;
     }
 
-    private int FindMessageIndex(MessageBuffer messageToFind) {
+    private synchronized int FindMessageIndex(MessageBuffer messageToFind) {
         for (int i = 0; this.messageBuffers != null && i < this.messageBuffers.length; i++ ) {
             if ( this.messageBuffers[i].sessionID == messageToFind.sessionID ) {
                 return i;
@@ -184,7 +191,7 @@ public class MessageReceive extends Util implements Runnable {
         return -1;
     }
 
-    private MessageBuffer FindMessage(int sessionID) {
+    private synchronized MessageBuffer FindMessage(int sessionID) {
         long currentTimeInMsec = GetCurrentTime();
 
         if ( this.messageBuffers == null ) {
@@ -226,8 +233,8 @@ public class MessageReceive extends Util implements Runnable {
             System.arraycopy(data, 16, packetData[0], 0, packetData[0].length);
             return 0;
         } catch ( IOException e ) {
-            System.out.println("ReceivePacket error: " + e);
-
+//            System.out.println("ReceivePacket error: " + e);
+//
             return -1;
         }
     }

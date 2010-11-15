@@ -23,6 +23,7 @@ public class MessageSend {
         try {
             DatagramSocket sendingSocket = new DatagramSocket();
             PacketHeader packetHeader = new PacketHeader(sessionID, packetType, sendData.length, 0);
+            System.out.println("Sending out packet with sessionID " + sessionID);
             SendPacket(sendingSocket, peer, packetHeader, sendData);
         } catch ( SocketException e ) {
             System.out.println("SendCommunication Socket error" + e);

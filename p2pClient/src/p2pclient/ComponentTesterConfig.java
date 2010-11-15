@@ -17,4 +17,7 @@ public class ComponentTesterConfig {
     public static boolean TEST_CHUNK_LIST_RESPONSE_IMPORT_EXPORT = false;
     public static boolean TEST_CHUNK_REQUEST_IMPORT_EXPORT = false;
     public static boolean TEST_CHUNK_RESPONSE_IMPORT_EXPORT = false;
+    public static boolean TEST_TRACKER_TORRENT_QUERY = false;
+    public static boolean TEST_TRACKER_TORRENT_QUERY_RESPONSE = false;
+    public static boolean TEST_LIST_REMOVAL_ALGORITHM = false;
 }

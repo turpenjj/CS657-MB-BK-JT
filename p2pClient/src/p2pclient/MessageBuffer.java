@@ -39,11 +39,10 @@ public class MessageBuffer {
      * @param peer[out]
      * @param packetType[out]
      * @param sessionID[out]
-     * @param messageData[out]
      *
-     * @return true if message is complete (output parameters are valid), false otherwise
+     * @return message data if message is complete (output parameters are valid), null otherwise
      */
-    public boolean IsMessageComplete(Peer[] peer, PacketType[] packetType, int[] sessionID, byte[][] messageData) {
+    public byte[] IsMessageComplete(Peer[] peer, PacketType[] packetType, int[] sessionID) {
         Thread.yield();
         if ( this.totalBytesReceived == this.packetHeader.totalSize ) {
             System.out.println("This message is complete! " + this.packetHeader.packetType + " " + this.packetHeader.sessionID + " " + this.totalBytesReceived);
@@ -57,13 +56,9 @@ public class MessageBuffer {
             if ( sessionID != null ) {
                 sessionID[0] = this.packetHeader.sessionID;
             }
-            if ( messageData != null ) {
-                messageData[0] = this.messageData;
-            }
-
-            return true;
+            return this.messageData;
         } else {
-            return false;
+            return null;
         }
     }
 
