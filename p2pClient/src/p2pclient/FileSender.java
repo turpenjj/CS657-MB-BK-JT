@@ -21,16 +21,16 @@ public class FileSender extends Util {
         myHost.start();
         int peerIp = ByteArrayToInt(InetAddress.getByName("192.168.1.100").getAddress());
         Peer myPeer = new Peer(peerIp, 9876);
-        myReq = new RequestingClient(myPeer, "devlist.txt");
+//        myReq = new RequestingClient(myPeer, "devlist.txt");
 //        myReq1 = new RequestingClient(myPeer, "devlis1t.txt");
 
         myReq.start();
 //        myReq1.start();
-        myReq.RequestChunkList();
+//        myReq.RequestChunkList();
         String receivedFilename = null;
         int receivedChunkList[] = null;
 //        myReq1.RequestChunkList("devlist.txt");
-        myReq.RequestChunk(1);
+//        myReq.RequestChunk(1);
 //        try {
 //            BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 //            System.out.print("Enter File to send: ");
