@@ -23,12 +23,14 @@ public class MessageBuffer {
         this.timestampLastUpdatedMsec = Util.GetCurrentTime();
         this.sessionID = initialHeader.sessionID;
         this.totalBytesReceived = 0;
+        this.messageData = new byte[this.packetHeader.totalSize];
     }
 
     public void AddDataToMessage(PacketHeader incomingHeader, byte[] incomingData) {
         // TODO: copy incomingData to the incomingHeader.offset in this.messageData
         this.totalBytesReceived += incomingData.length;
         this.timestampLastUpdatedMsec = Util.GetCurrentTime();
+        System.arraycopy(incomingData, 0, this.messageData, incomingHeader.offset, incomingData.length);
     }
 
     /**
@@ -41,18 +43,23 @@ public class MessageBuffer {
      *
      * @return true if message is complete (output parameters are valid), false otherwise
      */
-    public boolean IsMessageComplete(Peer peer, PacketType packetType, int[] sessionID, byte[] messageData) {
+    public boolean IsMessageComplete(Peer[] peer, PacketType[] packetType, int[] sessionID, byte[][] messageData) {
+        Thread.yield();
         if ( this.totalBytesReceived == this.packetHeader.totalSize ) {
+            System.out.println("This message is complete! " + this.packetHeader.packetType + " " + this.packetHeader.sessionID + " " + this.totalBytesReceived);
+            System.out.println(": " + Util.ConvertToHex(this.messageData));
             if ( peer != null ) {
-                peer = this.peer;
+                peer[0] = this.peer;
             }
             if ( packetType != null ) {
-                packetType = this.packetHeader.packetType;
+                packetType[0] = this.packetHeader.packetType;
             }
-            if ( peer != null ) {
+            if ( sessionID != null ) {
                 sessionID[0] = this.packetHeader.sessionID;
             }
-            messageData = this.messageData;
+            if ( messageData != null ) {
+                messageData[0] = this.messageData;
+            }
 
             return true;
         } else {

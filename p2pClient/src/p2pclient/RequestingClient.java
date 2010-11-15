@@ -54,36 +54,35 @@ public class RequestingClient extends Util implements Runnable {
                 timeForListRequest = GetCurrentTime() + LIST_REQUEST_FREQUENCY;
                 RequestChunkList();
             }
-            
-        //TODO: add requests for missing chunks
-        //TODO: Loop through listeners and check response status for each listener
-            for ( int i = 0; i < listenerList.length; i++ ) {
-                PacketType packetType = null;
-                byte[] data = null;
-                int status = RequestStatus(listenerList[i], packetType, data);
-                switch (status) {
-                    case 0: //still waiting
-                        break;
-                    case 1: //request complete
-                        switch (packetType) {
-                            case CHUNK_LIST_RESPONSE:
-                                ProcessChunkListResponse(data);
-                                break;
-                            case CHUNK_RESPONSE:
-                                ProcessChunkResponse(data);
-                                break;
-                        }
-                        RemoveListenerFromList(listenerList[i]);
-                        break;
-                    case 2: //timeout
-                        if ( packetType == PacketType.CHUNK_RESPONSE ) {
-                            chunkManager.chunkList[listenerList[i].chunkNumber].chunkInfo.status = 0;
-                        }
-                        RemoveListenerFromList(listenerList[i]);
-                        break;
+                //Loop through listeners and check response status for each listener
+                for ( int i = 0; listenerList != null && i < listenerList.length; i++ ) {
+                    PacketType[] packetType = new PacketType[1];
+                    byte[][] data = new byte[1][];
+                    int status = RequestStatus(listenerList[i], packetType, data);
+                    switch (status) {
+                        case 0: //still waiting
+                            break;
+                        case 1: //request complete
+                            System.out.println("Completed a Request");
+                            switch (packetType[0]) {
+                                case CHUNK_LIST_RESPONSE:
+                                    ProcessChunkListResponse(data[0]);
+                                    break;
+                                case CHUNK_RESPONSE:
+                                    ProcessChunkResponse(data[0]);
+                                    break;
+                            }
+                            RemoveListenerFromList(listenerList[i]);
+                            break;
+                        case 2: //timeout
+                            if ( packetType[0] == PacketType.CHUNK_RESPONSE ) {
+                                chunkManager.chunkList[listenerList[i].chunkNumber].chunkInfo.status = 0;
+                            }
+                            RemoveListenerFromList(listenerList[i]);
+                            break;
+                    }
                 }
-                
-            }
+        //TODO: add requests for missing chunks
         //NOTE: Each listener will process and store the results when they are received            
         }
     }
@@ -119,6 +118,7 @@ public class RequestingClient extends Util implements Runnable {
     }
 
     private void RemoveListenerFromList(Listener listenerToRemove) {
+        listenerToRemove.listener.Stop();
         if ( listenerList.length == 1 ) {
             listenerList = null;
         } else {
@@ -131,7 +131,7 @@ public class RequestingClient extends Util implements Runnable {
     }
 
     private Listener FindListener(int sessionID) {
-        for ( int i = 0; i < listenerList.length; i++ ) {
+        for ( int i = 0; listenerList != null && i < listenerList.length; i++ ) {
             if ( listenerList[i].sessionID == sessionID ) {
                 return listenerList[i];
             }
@@ -174,7 +174,7 @@ System.out.println("Sending out a new chunk list request");
      *   2 (timed out)
      *   If status is returned as 1, chunkData will contain the chunk data
      */
-    private int RequestStatus(Listener listener, PacketType packetType, byte[] responseData) {
+    private int RequestStatus(Listener listener, PacketType[] packetType, byte[][] responseData) {
         int status = listener.GetMessage(packetType, responseData);
 
         return status;
@@ -223,7 +223,7 @@ class Listener {
         this.status = 0;
     }
 
-    public int GetMessage(PacketType packetType, byte[] packetData) {
+    public int GetMessage(PacketType[] packetType, byte[][] packetData) {
         boolean messageAvailable = listener.GetMessage(sessionID, null, null, packetType, null, packetData);
         if ( messageAvailable == true ) {
             status = 1;

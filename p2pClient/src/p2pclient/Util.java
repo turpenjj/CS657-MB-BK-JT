@@ -50,6 +50,9 @@ public class Util {
     }
 
     public static int IntArrayToByteArray(byte[] b, int index, int[] value) {
+        if ( value == null ) {
+            return index;
+        }
         for ( int i = 0; i < value.length; i++ ) {
             IntToByteArray(b, i*4, value[i]);
         }

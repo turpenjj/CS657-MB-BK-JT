@@ -52,25 +52,27 @@ System.out.println("ServingClient listening on port " + listeningPort);
         //Continually poll the listener for requests, then determine if we want
         //to respond and respond if we want
         for ( ;; ) {
-            PacketType packetType = null;
+            PacketType[] packetType = new PacketType[1];
             int[] sessionID = new int[1];
             sessionID[0] = 0;
-            Peer peer = null;
-            byte[] packetData = null;
-            if ( listener.GetMessage(0, acceptedPackets, peer, packetType, sessionID, packetData)) {
-                peerManager.UpdatePeer(peer);
-                switch (packetType) {
+            Peer[] peer = new Peer[1];
+            byte[][] packetInData = new byte[1][];
+            if ( listener.GetMessage(0, acceptedPackets, peer, packetType, sessionID, packetInData)) {
+                byte[] packetData = packetInData[0];
+                System.out.println("Got a message: " + Util.ConvertToHex(packetData) + " from " + peer[0].clientIp);
+                peerManager.UpdatePeer(peer[0]);
+                switch (packetType[0]) {
                     case CHUNK_LIST_REQUEST:
                         ChunkListRequest chunkListRequest = new ChunkListRequest();
                         chunkListRequest.ImportMessagePayload(packetData);
-                        SendChunkListResponse(peer, chunkListRequest, sessionID[0]);
+                        SendChunkListResponse(peer[0], chunkListRequest, sessionID[0]);
                         break;
                     case CHUNK_REQUEST:
-                        if ( peerManager.ShouldTradeWith(peer) ) {
+                        if ( peerManager.ShouldTradeWith(peer[0]) ) {
                             ChunkRequest chunkRequest = new ChunkRequest();
                             chunkRequest.ImportMessagePayload(packetData);
-                            SendChunkResponse(peer, chunkRequest, sessionID[0]);
-                            peerManager.AddCreditForUsToPeer(peer);
+                            SendChunkResponse(peer[0], chunkRequest, sessionID[0]);
+                            peerManager.AddCreditForUsToPeer(peer[0]);
                         }
                         break;
                 }
@@ -83,6 +85,10 @@ System.out.println("ServingClient listening on port " + listeningPort);
         int chunkManagerIndex = 0;
         while ( chunkManager == null && chunkManagers[chunkManagerIndex] != null ) {
             chunkManager = chunkManagers[chunkManagerIndex++].FindChunkManager(chunkListRequest.filename);
+        }
+        if ( chunkManager == null ) {
+            System.out.println("Failed to find an appropriate chunk manager");
+            return;
         }
         ChunkListResponse chunkListResponse = new ChunkListResponse(chunkManager.filename, chunkManager.AvailableChunks());
         MessageSend sender = new MessageSend();

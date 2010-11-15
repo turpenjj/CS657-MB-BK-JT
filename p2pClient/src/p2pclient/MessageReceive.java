@@ -11,6 +11,7 @@ import java.net.*;
  */
 public class MessageReceive extends Util implements Runnable {
     private Thread runner;
+    private volatile boolean stop = false;
     private DatagramSocket listeningSocket;
     private MessageBuffer[] messageBuffers;
     private PacketHeader[] headers;
@@ -56,39 +57,47 @@ public class MessageReceive extends Util implements Runnable {
         }
     }
 
+    public void Stop() {
+        this.listeningSocket.close();
+        stop = true;
+    }
+
     public void run() {
         System.out.println("Started a Message Receive thread " + this.listeningSocket.getLocalPort());
 
         /* Outline:
          * Call ReceiveCommunication in a loop. Don't worry about timeouts. When a full message is received, call ProcessQuery().
          */
-        for (;;) {
-            Peer peer = null;
+        while ( !stop ) {
+            Peer[] peer = new Peer[1];
             PacketHeader[] packetHeader = new PacketHeader[1];
-            byte[] packetData = null;
+            byte[][] packetInData = new byte[1][];
+            byte[] receivedPacketData = null;
             MessageBuffer messageBuff;
 
-            if ( ReceivePacket(peer, packetHeader, packetData) != -1 ) {
+            if ( ReceivePacket(peer, packetHeader, packetInData) != -1 ) {
+                receivedPacketData = packetInData[0];
                 boolean accept = false;
                 for (PacketType type : this.acceptedPacketTypes) {
+//                    int[] temp = new int[1];
+//                    System.out.println("String: " + Util.ExtractNullTerminatedString(receivedPacketData, 4, temp));
                     if (packetHeader[0].packetType == type) {
-                        System.out.println("Accepting this packet");
                         accept = true;
                     } else {
-                        System.out.println("Rejecting this packet");
                     }
                 }
                 if ( accept ) {
+                    System.out.println("Accepting this packet");
                     if ( (messageBuff = FindMessage(packetHeader[0].sessionID)) != null ) {
-                        messageBuff.AddDataToMessage(packetHeader[0], packetData);
+                        messageBuff.AddDataToMessage(packetHeader[0], receivedPacketData);
                     } else {
-                        messageBuff = new MessageBuffer(peer, packetHeader[0]);
-                        messageBuff.AddDataToMessage(packetHeader[0], packetData);
-                        // TODO: add new message buffer to this.messageBuffers
-                        System.out.println("Need to add to this.messageBuffers");
+                        messageBuff = new MessageBuffer(peer[0], packetHeader[0]);
+                        messageBuff.AddDataToMessage(packetHeader[0], receivedPacketData);
+                        AddToMessageList(messageBuff);
                     }
                 } else {
                     // TODO: discard received packet data
+                    System.out.println("Rejecting this packet");
                 }
             }
         }
@@ -106,27 +115,32 @@ public class MessageReceive extends Util implements Runnable {
      *
      * @return true if a message was found and output parameters are populated, false otherwise
      */
-    public boolean GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer peer, PacketType packetType, int[] sessionID, byte[] packetData) {
+    public boolean GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer[] peer, PacketType[] packetType, int[] sessionID, byte[][] packetData) {
         MessageBuffer message;
 
-        //If there are no message buffers available, obviously we don't have the message, so return null
-        if ( this.messageBuffers == null ) {
-            return false;
-        }
+        //Need to yield to allow this.messageBuffers to be updated....
+        Thread.currentThread().yield();
+
         if (filterSessionID != 0) {
             if ((message = this.FindMessage(filterSessionID)) != null) {
                 if (message.IsMessageComplete(peer, packetType, sessionID, packetData)) {
                     // TODO: remove message from this.messageBuffers
+                    RemoveMessageFromList(message);
                     return true;
                 }
             }
         } else {
-            for (MessageBuffer loopMessage : this.messageBuffers) {
-                if (loopMessage.IsMessageComplete(peer, packetType, sessionID, packetData)) {
-                    for (PacketType type : this.acceptedPacketTypes) {
-                        if (packetType == type) {
-                            // TODO: remove message from this.messageBuffers
-                            return true;
+            if (this.messageBuffers != null ) {
+                for (MessageBuffer loopMessage : this.messageBuffers) {
+                    if (loopMessage.IsMessageComplete(peer, packetType, sessionID, packetData)) {
+                        for (PacketType type : this.acceptedPacketTypes) {
+                            System.out.println("Checking " + type + " vs " + packetType[0]);
+                            if (packetType != null && packetType[0] == type) {
+                                System.out.println("We have a match!");
+                                // TODO: remove message from this.messageBuffers
+                                RemoveMessageFromList(loopMessage);
+                                return true;
+                            }
                         }
                     }
                 }
@@ -134,6 +148,40 @@ public class MessageReceive extends Util implements Runnable {
         }
 
         return false;
+    }
+
+    private void AddToMessageList(MessageBuffer messageToAdd) {
+        if ( this.messageBuffers == null ) {
+            this.messageBuffers = new MessageBuffer[1];
+        } else {
+            MessageBuffer[] tempList = new MessageBuffer[this.messageBuffers.length + 1];
+            System.arraycopy(this.messageBuffers, 0, tempList, 0, this.messageBuffers.length);
+            this.messageBuffers = tempList;
+        }
+        this.messageBuffers[this.messageBuffers.length - 1] = messageToAdd;
+    }
+
+    private void RemoveMessageFromList(MessageBuffer messageToRemove) {
+        if ( this.messageBuffers.length == 1 ) {
+            this.messageBuffers = null;
+        } else {
+            int messageIndex = FindMessageIndex(messageToRemove);
+            if ( messageIndex != -1 ) {
+                MessageBuffer[] tempList = new MessageBuffer[this.messageBuffers.length - 1];
+                System.arraycopy(this.messageBuffers, 0, tempList, 0, messageIndex);
+                System.arraycopy(this.messageBuffers, messageIndex + 1, tempList, messageIndex, tempList.length - messageIndex);
+                this.messageBuffers = tempList;
+            }
+        }
+    }
+
+    private int FindMessageIndex(MessageBuffer messageToFind) {
+        for (int i = 0; this.messageBuffers != null && i < this.messageBuffers.length; i++ ) {
+            if ( this.messageBuffers[i].sessionID == messageToFind.sessionID ) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private MessageBuffer FindMessage(int sessionID) {
@@ -162,20 +210,20 @@ public class MessageReceive extends Util implements Runnable {
      *
      * @return > 0 if packet data received, 0 on socket timeout, -1 on socket error
      */
-    private int ReceivePacket(Peer peer, PacketHeader[] packetHeader, byte[] packetData) {
-        packetData = new byte[this.MAX_PACKET_SIZE];
-        DatagramPacket receivedPacket = new DatagramPacket(packetData, packetData.length);
+    private int ReceivePacket(Peer[] peer, PacketHeader[] packetHeader, byte[][] packetData) {
+        byte[] rawData = new byte[this.MAX_PACKET_SIZE];
+        DatagramPacket receivedPacket = new DatagramPacket(rawData, rawData.length);
 
         try {
             this.listeningSocket.receive(receivedPacket);
             InetAddress senderIP = receivedPacket.getAddress();
-            peer = new Peer(senderIP, 0);
+            peer[0] = new Peer(senderIP, 0);
 
             byte[] data = receivedPacket.getData();
             packetHeader[0] = new PacketHeader();
             packetHeader[0].ImportHeader(data);
-            packetData = new byte[data.length - 16];
-            System.arraycopy(data, 16, packetData, 0, packetData.length);
+            packetData[0] = new byte[receivedPacket.getLength() - 16];
+            System.arraycopy(data, 16, packetData[0], 0, packetData[0].length);
             return 0;
         } catch ( IOException e ) {
             System.out.println("ReceivePacket error: " + e);

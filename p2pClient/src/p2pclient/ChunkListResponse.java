@@ -24,10 +24,14 @@ public class ChunkListResponse extends Util {
      *   The constructor for the server side of the response
      */
     ChunkListResponse(String requestedFile, ChunkInfo[] chunkInfo) {
-        chunkList = new int[chunkInfo.length];
         filename = requestedFile;
-        for ( int i = 0; i < chunkInfo.length; i++ ) {
-            chunkList[i] = chunkInfo[i].chunkNumber;
+        if ( chunkInfo == null ) {
+            chunkList = null;
+        } else {
+            chunkList = new int[chunkInfo.length];
+            for ( int i = 0; chunkInfo != null && i < chunkInfo.length; i++ ) {
+                chunkList[i] = chunkInfo[i].chunkNumber;
+            }
         }
     }
 
@@ -41,7 +45,13 @@ public class ChunkListResponse extends Util {
      */
     public byte[] ExportMessagePayload() {
         //length of filename plus null spacer, plus length of chunk list
-        int requestLength = filename.length() + 1 + chunkList.length * 4;
+        int chunkListLength;
+        if ( chunkList == null ) {
+            chunkListLength = 0;
+        } else {
+            chunkListLength = chunkList.length * 4;
+        }
+        int requestLength = filename.length() + 1 + chunkListLength * 4;
         byte[] requestInBytes = new byte[requestLength];
         int indexIntoByteArray = InsertNullTerminatedString(requestInBytes, 0, filename);
         indexIntoByteArray = IntArrayToByteArray(requestInBytes, indexIntoByteArray, chunkList);

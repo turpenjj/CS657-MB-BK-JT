@@ -41,10 +41,10 @@ public class Tracker extends Util implements Runnable {
     }
 
     public void run() {
-        Peer peer = null;
-        PacketType packetType = null;
-        int[] sessionID = null;
-        byte[] messageData = null;
+        Peer[] peer = new Peer[1];
+        PacketType[] packetType = new PacketType[1];
+        int[] sessionID = new int[1];
+        byte[][] messageData = new byte[1][];
 
         System.out.println("Started a Tracker thread on port " + this.listeningPort);
 
@@ -52,7 +52,7 @@ public class Tracker extends Util implements Runnable {
 
         for (;;) {
             if (this.messageReceiver.GetMessage(0, this.acceptedPacketTypes, peer, packetType, sessionID, messageData)) {
-                ProcessQuery(peer, packetType, messageData);
+                ProcessQuery(peer[0], packetType[0], messageData[0]);
             } else {
                 try {
                     Thread.sleep(100);
