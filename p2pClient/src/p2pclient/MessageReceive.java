@@ -16,8 +16,6 @@ public class MessageReceive extends Util implements Runnable {
     private boolean stopOnGet;
     private DatagramSocket listeningSocket;
     private MessageBuffer[] messageBuffers;
-    private PacketHeader[] headers;
-    private byte[][] packetData;
     private PacketType[] acceptedPacketTypes;
     private int SOCKET_TIMEOUT_MS = 15000;
     private int MAX_PACKET_SIZE = 1500;
@@ -136,7 +134,9 @@ public class MessageReceive extends Util implements Runnable {
                 if ( (messageData = message.IsMessageComplete(peer, packetType, sessionID)) != null) {
                     // TODO: remove message from this.messageBuffers
                     RemoveMessageFromList(message);
-                    stop = true;
+                    if ( !permanent ) {
+                        stop = true;
+                    }
                     return messageData;
                 }
             }
@@ -151,7 +151,9 @@ public class MessageReceive extends Util implements Runnable {
                             System.out.println("We have a match!");
                             // TODO: remove message from this.messageBuffers
                             RemoveMessageFromList(loopMessage);
-                            stop = true;
+                            if ( !permanent ) {
+                                stop = true;
+                            }
                             Thread.yield();
                             return messageData;
                         }
