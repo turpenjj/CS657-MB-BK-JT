@@ -8,20 +8,41 @@ import java.net.*;
  * @author Jeremy
  */
 public class ComponentTester {
-    public static String TEST_FILE_PATH_ROOT = "D:/GradSchool/C657-Networking/Project/GitHubRepo/p2pClient/TestFilesDir/";
-
+    
     public static void main (String args[]) throws Exception {
-//        TestServingClient();
-        TestChunkListRequestImportExport();
-        TestChunkListResponseImportExport();
-        TestChunkRequestImportExport();
-        TestChunkResponseImportExport();
-        TestTrackerTorrentRegistration();
-        TestTorrent();
-        TestTrackerRegistrationImportExport();
-        TestTrackerQueryResponseImportExport();
-        TestTrackerQueryImportExport();
-        TestUtilExtractNullTerminatedString();
+        if (ComponentTesterConfig.TEST_TRACKER_TORRENT_REGISTRATION) {
+            TestTrackerTorrentRegistration();
+        }
+        if (ComponentTesterConfig.TEST_TORRENT) {
+            TestTorrent();
+        }
+        if (ComponentTesterConfig.TEST_TRACKER_REGISTRATION_IMPORT_EXPORT) {
+            TestTrackerRegistrationImportExport();
+        }
+        if (ComponentTesterConfig.TEST_TRACKER_QUERY_RESPONSE_IMPORT_EXPORT) {
+            TestTrackerQueryResponseImportExport();
+        }
+        if (ComponentTesterConfig.TEST_TRACKER_QUERY_IMPORT_EXPORT) {
+            TestTrackerQueryImportExport();
+        }
+        if (ComponentTesterConfig.TEST_UTIL_EXTRACT_NULL_TERMINATED_STRING) {
+            TestUtilExtractNullTerminatedString();
+        }
+        if (ComponentTesterConfig.TEST_SERVING_CLIENT) {
+            TestServingClient();
+        }
+        if (ComponentTesterConfig.TEST_CHUNK_LIST_REQUEST_IMPORT_EXPORT) {
+            TestChunkListRequestImportExport();
+        }
+        if (ComponentTesterConfig.TEST_CHUNK_LIST_RESPONSE_IMPORT_EXPORT) {
+            TestChunkListResponseImportExport();
+        }
+        if (ComponentTesterConfig.TEST_CHUNK_REQUEST_IMPORT_EXPORT) {
+            TestChunkRequestImportExport();
+        }
+        if (ComponentTesterConfig.TEST_CHUNK_RESPONSE_IMPORT_EXPORT) {
+            TestChunkResponseImportExport();
+        }
     }
 
     private static void TestTrackerTorrentRegistration() throws Exception {
@@ -35,11 +56,11 @@ public class ComponentTester {
         TrackerTorrentRegistration torrentRegistration2;
         byte[] messageData2;
 
-        torrent = new Torrent(ComponentTester.TEST_FILE_PATH_ROOT, "TestFile.txt");
+        torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile.txt");
         torrentRegistration = new TrackerTorrentRegistration(torrent);
         messageData = torrentRegistration.ExportMessagePayload();
 
-        torrent2 = new Torrent(ComponentTester.TEST_FILE_PATH_ROOT, "TestFile2.txt");
+        torrent2 = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile2.txt");
         torrentRegistration2 = new TrackerTorrentRegistration(torrent2);
         messageData2 = torrentRegistration2.ExportMessagePayload();
 
@@ -81,7 +102,7 @@ public class ComponentTester {
     }
 
     private static void TestTorrent() throws Exception {
-        Torrent torrent = new Torrent(ComponentTester.TEST_FILE_PATH_ROOT, "TestFile.txt");
+        Torrent torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile.txt");
     }
 
     private static void TestTrackerRegistrationImportExport() throws Exception {
@@ -111,12 +132,18 @@ public class ComponentTester {
         }
 
         TrackerRegistration trackerRegistrationImport = new TrackerRegistration();
-        Peer peer1 = new Peer(trackerRegistration.peer.clientIp, 0);
-        Peer peer2 = new Peer(trackerRegistration2.peer.clientIp, 0);
+        int IPint;
+        InetAddress IP;
+
+        IPint = Util.InetAddressToInt(trackerRegistration.peer.clientIp);
+        IP = InetAddress.getByAddress(Util.IntToByteArray(IPint + 1));
+        Peer peer1 = new Peer(IP, 0);
         trackerRegistrationImport.ImportMessage(peer1, messageData);
         
         Thread.sleep((long)(trackerRegistrationImport.PEER_TIMEOUT_MSEC * 0.5));
 
+        IP = InetAddress.getByAddress(Util.IntToByteArray(IPint + 2));
+        Peer peer2 = new Peer(IP, 0);
         trackerRegistrationImport.ImportMessage(peer2, messageData2);
 
         Thread.sleep((long)(trackerRegistrationImport.PEER_TIMEOUT_MSEC * 0.6));
@@ -131,7 +158,7 @@ public class ComponentTester {
         if (peers == null || peers.length == 0) {
             System.out.println("Error: 'Set' test set should still be present");
         } else {
-            if (peers[0].clientIp == trackerRegistration2.peer.clientIp &&
+            if (peers[0].clientIp.equals(peer2.clientIp) &&
                     peers[0].listeningPort == trackerRegistration2.peer.listeningPort) {
                 System.out.println("Success: Found 'Set1' file from the correct host");
             } else {
@@ -148,7 +175,7 @@ public class ComponentTester {
         if (peers == null || peers.length == 0) {
             System.out.println("Error: 'Test' test set should still be present");
         } else {
-            if (peers[0].clientIp == trackerRegistration.peer.clientIp &&
+            if (peers[0].clientIp.equals(peer1.clientIp) &&
                     peers[0].listeningPort == trackerRegistration.peer.listeningPort) {
                 System.out.println("Success: Found 'Test4' file from the correct host");
             } else {
@@ -159,7 +186,7 @@ public class ComponentTester {
         if (peers != null && peers.length == 0) {
             System.out.println("Error: 'Set' test set should still be present");
         } else {
-            if (peers[0].clientIp == trackerRegistration2.peer.clientIp &&
+            if (peers[0].clientIp.equals(peer2.clientIp) &&
                     peers[0].listeningPort == trackerRegistration2.peer.listeningPort) {
                 System.out.println("Success: Found 'Set1' file from the correct host");
             } else {
@@ -167,9 +194,9 @@ public class ComponentTester {
             }
         }
 
-        trackerRegistration.AddFilesFromDirectory(ComponentTester.TEST_FILE_PATH_ROOT + "SetTestFileSet");
-        trackerRegistration.AddFilesFromDirectory(ComponentTester.TEST_FILE_PATH_ROOT + "EmptyTestFileSet");
-        trackerRegistration.AddFilesFromDirectory(ComponentTester.TEST_FILE_PATH_ROOT + "DirectoryDoesntExist");
+        trackerRegistration.AddFilesFromDirectory(ComponentTesterConfig.TEST_FILE_PATH_ROOT + "SetTestFileSet");
+        trackerRegistration.AddFilesFromDirectory(ComponentTesterConfig.TEST_FILE_PATH_ROOT + "EmptyTestFileSet");
+        trackerRegistration.AddFilesFromDirectory(ComponentTesterConfig.TEST_FILE_PATH_ROOT + "DirectoryDoesntExist");
     }
     
     private static void TestTrackerQueryImportExport() {
@@ -206,7 +233,7 @@ public class ComponentTester {
         byte[] messageData;
 
         for (i = 0; i < peerList.length; i++) {
-            peerList[i] = new Peer(InetAddress.getByAddress(startingIPbyte), currentPort);
+            peerList[i] = new Peer(IP, currentPort);
             currentIP += 3;
             currentPort += 127;
         }
@@ -220,9 +247,7 @@ public class ComponentTester {
 
             i = 0;
             for (Peer peer : trackerQueryResponseImport.peerList) {
-//                byte[] bytes = Util.IntToByteArray(peer.clientIp);
-                IP = peer.clientIp;
-                System.out.println(i + ": IP = " + IP.getHostAddress() + "; Port = " + peer.listeningPort);
+                System.out.println(i + ": IP = " + peer.clientIp + "; Port = " + peer.listeningPort);
                 i++;
             }
         } else {
@@ -354,6 +379,11 @@ public class ComponentTester {
 
         ServingClient servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
         servingClient.start();
+//        try {
+//            Thread.sleep(2000);
+//        } catch ( InterruptedException e ) {
+//
+//        }
 
         try {
             Peer dummyPeer = new Peer(InetAddress.getLocalHost(), 51515);
