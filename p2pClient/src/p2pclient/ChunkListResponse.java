@@ -51,7 +51,7 @@ public class ChunkListResponse extends Util {
         } else {
             chunkListLength = chunkList.length * 4;
         }
-        int requestLength = filename.length() + 1 + chunkListLength * 4;
+        int requestLength = filename.length() + 1 + chunkListLength;
         byte[] requestInBytes = new byte[requestLength];
         int indexIntoByteArray = InsertNullTerminatedString(requestInBytes, 0, filename);
         indexIntoByteArray = IntArrayToByteArray(requestInBytes, indexIntoByteArray, chunkList);
