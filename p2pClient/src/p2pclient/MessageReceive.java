@@ -258,8 +258,6 @@ public class MessageReceive extends Util implements Runnable {
             if ( !this.permanent ) {
                 this.stopOnGet = true;
             }
-//            System.out.println("ReceivePacket error: " + e);
-//
             return -1;
         }
     }
