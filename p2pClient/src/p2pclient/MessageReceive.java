@@ -7,7 +7,17 @@ import java.net.*;
  * This is a utility class for receiving messages that arrive in one or more UDP
  * packets. It has a listening thread and listening socket for each instance.
  *
- * @author Jeremy
+ * When instantiated, the caller specifies whether or not this message receiver
+ * is permanent.  If permanent, the thread sticks around indefinitely and the
+ * socket will not timeout. If not permanent, the socket can timeout.  The
+ * thread will always stick around at least until a call is made to GetMessage()
+ * If the socket timed out before the call to GetMessage(), the thread will
+ * stop after that call.  If the call to GetMessage() returns what the caller
+ * needs, the thread will automatically stop.  Otherwise, the thread stays alive
+ * Once stopped, the thread cannot be restarted and the caller will need to form
+ * a new MessageReceive thread.
+ *
+ * @author Matt
  */
 public class MessageReceive extends Util implements Runnable {
     private Thread runner;
@@ -53,6 +63,7 @@ public class MessageReceive extends Util implements Runnable {
             }
         }
     }
+
 
     public void start() {
         if ( runner == null ) {
