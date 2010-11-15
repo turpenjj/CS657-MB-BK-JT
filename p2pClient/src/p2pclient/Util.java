@@ -122,7 +122,7 @@ public class Util {
         }
 
         System.arraycopy(s, 0, b, startingIndex, s.length);
-        b[s.length] = '\0';
+        b[startingIndex + s.length] = '\0';
 
         return startingIndex + s.length + 1;
     }

@@ -40,23 +40,20 @@ public class Tracker extends Util implements Runnable {
         }
     }
 
-    public void run() {
-        Peer peer = null;
-        PacketType packetType = null;
-        int sessionID = 0;
-        byte[] messageData = null;
+    public void run() throws Exception {
+        Peer peer;
+        PacketHeader messageHeader;
+        byte[] messageData;
 
         System.out.println("Started a Tracker thread on port " + this.listeningPort);
 
         this.messageReceiver = new MessageReceive(this.listeningPort, this.acceptedPacketTypes);
 
         for (;;) {
-            if (this.messageReceiver.GetMessage(0, this.acceptedPacketTypes, peer, packetType, sessionID, messageData)) {
-                ProcessQuery(peer, packetType, sessionID, messageData);
+            if (this.messageReceiver.GetMessage(0, this.acceptedPacketTypes, peer, messageHeader, messageData)) {
+                ProcessQuery(peer, messageHeader, messageData);
             } else {
-                try {
-                    Thread.sleep(100);
-                } catch ( InterruptedException e ) {}
+                Thread.sleep(100);
             }
 
         }
@@ -65,8 +62,8 @@ public class Tracker extends Util implements Runnable {
     /*
      * Dispositions a full message once it has been received. Makes use of other classes (TrackerQuery, TrackerQueryResponse, TrackerRegistration, TrackerTorrentRegistration as necessary).
      */
-    private void ProcessQuery(Peer peer, PacketType packetType, int sessionID, byte[] messageData) {
-        switch (packetType) {
+    private void ProcessQuery(Peer peer, PacketHeader messageHeader, byte[] messageData) {
+        switch (messageHeader.packetType) {
             case TRACKER_QUERY:
                 TrackerQuery trackerQuery = new TrackerQuery();
                 trackerQuery.ImportQuery(messageData);
@@ -89,7 +86,7 @@ public class Tracker extends Util implements Runnable {
                 break;
 
             default:
-                System.out.println("Received an unsupported packetType " + packetType);
+                System.out.println("Received an unsupported packetType " + messageHeader.packetType);
 
                 break;
         }

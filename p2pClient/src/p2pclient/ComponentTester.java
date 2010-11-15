@@ -1,13 +1,108 @@
 package p2pclient;
 
+import java.io.*;
+import java.net.*;
+
 /**
  *
  * @author Jeremy
  */
 public class ComponentTester {
-    public static void main (String args[]) {
+    public static String TEST_FILE_PATH_ROOT = "Z:/Class/CS657-ComputerNetworks/Git/TestFilesDir/";
+
+    public static void main (String args[]) throws Exception {
+        TestTrackerRegistrationImportExport();
+        TestTrackerQueryResponseImportExport();
         TestTrackerQueryImportExport();
         TestUtilExtractNullTerminatedString();
+    }
+
+    private static void TestTrackerRegistrationImportExport() throws Exception {
+        TrackerRegistration trackerRegistration = new TrackerRegistration(21234);
+        byte[] messageData;
+        Peer[] peers;
+
+        trackerRegistration.AddFilesFromDirectory("Test");
+
+        messageData = trackerRegistration.ExportMessagePayload();
+        if (messageData != null) {
+            System.out.println("TestTrackerRegistration: ExportMessagePayload succeeded");
+        } else {
+            System.out.println("TestTrackerRegistration: ExportMessagePayload failed");
+        }
+
+        TrackerRegistration trackerRegistration2 = new TrackerRegistration(50123);
+        byte[] messageData2;
+
+        trackerRegistration2.AddFilesFromDirectory("Set");
+
+        messageData2 = trackerRegistration2.ExportMessagePayload();
+        if (messageData2 != null) {
+            System.out.println("TestTrackerRegistration: ExportMessagePayload succeeded");
+        } else {
+            System.out.println("TestTrackerRegistration: ExportMessagePayload failed");
+        }
+
+        TrackerRegistration trackerRegistrationImport = new TrackerRegistration();
+        Peer peer1 = new Peer(trackerRegistration.peer.clientIp + 1, 0);
+        Peer peer2 = new Peer(trackerRegistration2.peer.clientIp + 2, 0);
+        trackerRegistrationImport.ImportMessage(peer1, messageData);
+        
+        Thread.sleep((long)(trackerRegistrationImport.PEER_TIMEOUT_MSEC * 0.5));
+
+        trackerRegistrationImport.ImportMessage(peer2, messageData2);
+
+        Thread.sleep((long)(trackerRegistrationImport.PEER_TIMEOUT_MSEC * 0.6));
+
+        peers = trackerRegistrationImport.Search("Test1");
+        if (peers != null && peers.length != 0) {
+            System.out.println("Error: 'Test' test set should have timed out");
+        } else {
+            System.out.println("Success: 'Test' set timed out");
+        }
+        peers = trackerRegistrationImport.Search("Set1");
+        if (peers == null || peers.length == 0) {
+            System.out.println("Error: 'Set' test set should still be present");
+        } else {
+            if (peers[0].clientIp == trackerRegistration2.peer.clientIp + 2 &&
+                    peers[0].listeningPort == trackerRegistration2.peer.listeningPort) {
+                System.out.println("Success: Found 'Set1' file from the correct host");
+            } else {
+                System.out.println("Error: Found 'Set1' file but from incorrect host");
+            }
+        }
+
+        // first instance should have timed out by now
+        trackerRegistrationImport.ImportMessage(peer1, messageData);
+        // this should be a replacement before the timeout occurs
+        trackerRegistrationImport.ImportMessage(peer2, messageData2);
+
+        peers = trackerRegistrationImport.Search("Test4");
+        if (peers == null || peers.length == 0) {
+            System.out.println("Error: 'Test' test set should still be present");
+        } else {
+            if (peers[0].clientIp == trackerRegistration.peer.clientIp + 1 &&
+                    peers[0].listeningPort == trackerRegistration.peer.listeningPort) {
+                System.out.println("Success: Found 'Test4' file from the correct host");
+            } else {
+                System.out.println("Error: Found 'Test4' file but from incorrect host");
+            }
+        }
+        peers = trackerRegistrationImport.Search("Set1");
+        if (peers != null && peers.length == 0) {
+            System.out.println("Error: 'Set' test set should still be present");
+        } else {
+            if (peers[0].clientIp == trackerRegistration2.peer.clientIp + 2 &&
+                    peers[0].listeningPort == trackerRegistration2.peer.listeningPort) {
+                System.out.println("Success: Found 'Set1' file from the correct host");
+            } else {
+                System.out.println("Error: Found 'Set1' file but from incorrect host");
+            }
+        }
+
+        trackerRegistration.AddFilesFromDirectory(ComponentTester.TEST_FILE_PATH_ROOT + "SetTestFileSet");
+        trackerRegistration.AddFilesFromDirectory(ComponentTester.TEST_FILE_PATH_ROOT + "EmptyTestFileSet");
+        trackerRegistration.AddFilesFromDirectory(ComponentTester.TEST_FILE_PATH_ROOT + "DirectoryDoesntExist");
     }
     
     private static void TestTrackerQueryImportExport() {
@@ -28,6 +123,45 @@ public class ComponentTester {
         } else {
             System.out.println("Import reported failure");
         }
+    }
+
+    private static void TestTrackerQueryResponseImportExport() throws Exception {
+        Peer[] peerList = new Peer[10];
+        TrackerQueryResponse trackerQueryResponse;
+        TrackerQueryResponse trackerQueryResponseImport;
+        int i;
+        InetAddress IP = InetAddress.getByName("192.168.1.1");
+        byte[] startingIPbyte = IP.getAddress();
+        int startingIPnumeric = Util.ByteArrayToInt(startingIPbyte);
+        int currentIP = startingIPnumeric;
+        int startingPort = 20000;
+        int currentPort = startingPort;
+        byte[] messageData;
+
+        for (i = 0; i < peerList.length; i++) {
+            peerList[i] = new Peer(currentIP, currentPort);
+            currentIP += 3;
+            currentPort += 127;
+        }
+
+        trackerQueryResponse = new TrackerQueryResponse(peerList);
+        messageData = trackerQueryResponse.ExportResponse();
+
+        trackerQueryResponseImport = new TrackerQueryResponse();
+        if (trackerQueryResponseImport.ImportResponse(messageData)) {
+            System.out.println("TrackerQueryReponse:Import reported success");
+
+            i = 0;
+            for (Peer peer : trackerQueryResponseImport.peerList) {
+                byte[] bytes = Util.IntToByteArray(peer.clientIp);
+                IP = InetAddress.getByAddress(bytes);
+                System.out.println(i + ": IP = " + IP + "; Port = " + peer.listeningPort);
+                i++;
+            }
+        } else {
+            System.out.println("TrackerQueryReponse:Import failed");
+        }
+
     }
 
     private static void TestUtilExtractNullTerminatedString() {
