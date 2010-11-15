@@ -14,7 +14,6 @@ package p2pclient;
  */
 public class ChunkManager {
     public String filename;
-//    Peer[] peerList;
     FileChunk[] chunkList;
 
     /*
@@ -44,7 +43,11 @@ public class ChunkManager {
      *   Returns an array of ChunkInfo that make up this file
      */
     public ChunkInfo[] GetChunkInfo() {
-        return null;
+        ChunkInfo[] chunkInfoList = new ChunkInfo[chunkList.length];
+        for ( int i = 0; i < chunkList.length; i++ ) {
+            chunkInfoList[i] = chunkList[i].chunkInfo;
+        }
+        return chunkInfoList;
     }
 
     /*
@@ -53,7 +56,11 @@ public class ChunkManager {
      *   the file
      */
     public ChunkInfo[] NeededChunks() {
-        return null;
+        return GetChunkList(0);
+    }
+
+    public ChunkInfo[] DownloadingChunks() {
+        return GetChunkList(1);
     }
 
     /*
@@ -62,17 +69,35 @@ public class ChunkManager {
      *   has for the file
      */
     public ChunkInfo[] AvailableChunks() {
-        return null;
+        return GetChunkList(2);
+    }
+
+    private ChunkInfo[] GetChunkList(int status) {
+        ChunkInfo[] chunks = null;
+
+        for ( int i = 0; i < chunkList.length; i++ ) {
+            if ( chunkList[i].chunkInfo.status == status ) {
+                if ( chunks == null ) {
+                    chunks = new ChunkInfo[1];
+                } else {
+                    ChunkInfo[] tempList = new ChunkInfo[chunks.length + 1];
+                    System.arraycopy(chunks, 0, tempList, 0, chunks.length);
+                    chunks = tempList;
+                }
+                chunks[chunks.length-1] = chunkList[i].chunkInfo;
+            }
+        }
+        return chunks;
     }
 
     /*
      * Description:
      *   Updates the chunk indicated by chunkNumber with the data in chunkData
-     *   If the hash of chunkData matches what is expected, the chunk is written
-     *   to disc.  Otherwise, false is returned.
      */
-    public boolean UpdateChunk(int chunkNumber, byte[] chunkData, Peer receivedFrom) {
-        return false;
+    public void UpdateChunk(int chunkNumber, byte[] chunkData, Peer receivedFrom) {
+        if ( chunkNumber < chunkList.length ) {
+            chunkList[chunkNumber].UpdateChunk(chunkData, receivedFrom);
+        }
     }
 
     /*
@@ -80,6 +105,9 @@ public class ChunkManager {
      *   Returns the data associated with the given chunk
      */
     public byte[] GetChunkData(int chunkNumber) {
+        if ( chunkNumber < chunkList.length ) {
+           return chunkList[chunkNumber].chunk;
+        }
         return null;
     }
 }
