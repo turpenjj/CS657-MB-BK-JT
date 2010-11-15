@@ -64,24 +64,28 @@ public class MessageReceive extends Util implements Runnable {
          */
         for (;;) {
             Peer peer = null;
-            PacketHeader packetHeader = null;
+            PacketHeader[] packetHeader = new PacketHeader[1];
             byte[] packetData = null;
             MessageBuffer messageBuff;
 
-            if ( ReceivePacket(peer, packetHeader, packetData) > 0 ) {
+            if ( ReceivePacket(peer, packetHeader, packetData) != -1 ) {
                 boolean accept = false;
                 for (PacketType type : this.acceptedPacketTypes) {
-                    if (packetHeader.packetType == type) {
+                    if (packetHeader[0].packetType == type) {
+                        System.out.println("Accepting this packet");
                         accept = true;
+                    } else {
+                        System.out.println("Rejecting this packet");
                     }
                 }
                 if ( accept ) {
-                    if ( (messageBuff = FindMessage(packetHeader.sessionID)) != null ) {
-                        messageBuff.AddDataToMessage(packetHeader, packetData);
+                    if ( (messageBuff = FindMessage(packetHeader[0].sessionID)) != null ) {
+                        messageBuff.AddDataToMessage(packetHeader[0], packetData);
                     } else {
-                        messageBuff = new MessageBuffer(peer, packetHeader);
-                        messageBuff.AddDataToMessage(packetHeader, packetData);
+                        messageBuff = new MessageBuffer(peer, packetHeader[0]);
+                        messageBuff.AddDataToMessage(packetHeader[0], packetData);
                         // TODO: add new message buffer to this.messageBuffers
+                        System.out.println("Need to add to this.messageBuffers");
                     }
                 } else {
                     // TODO: discard received packet data
@@ -135,6 +139,9 @@ public class MessageReceive extends Util implements Runnable {
     private MessageBuffer FindMessage(int sessionID) {
         long currentTimeInMsec = GetCurrentTime();
 
+        if ( this.messageBuffers == null ) {
+            return null;
+        }
         for (MessageBuffer message : this.messageBuffers) {
             if (message.sessionID == sessionID) {
                 return message;
@@ -155,15 +162,20 @@ public class MessageReceive extends Util implements Runnable {
      *
      * @return > 0 if packet data received, 0 on socket timeout, -1 on socket error
      */
-    private int ReceivePacket(Peer peer, PacketHeader packetHeader, byte[] packetData) {
+    private int ReceivePacket(Peer peer, PacketHeader[] packetHeader, byte[] packetData) {
         packetData = new byte[this.MAX_PACKET_SIZE];
         DatagramPacket receivedPacket = new DatagramPacket(packetData, packetData.length);
 
         try {
             this.listeningSocket.receive(receivedPacket);
             InetAddress senderIP = receivedPacket.getAddress();
+            peer = new Peer(senderIP, 0);
 
-            // TODO: populate peer, packet header, and packet data
+            byte[] data = receivedPacket.getData();
+            packetHeader[0] = new PacketHeader();
+            packetHeader[0].ImportHeader(data);
+            packetData = new byte[data.length - 16];
+            System.arraycopy(data, 16, packetData, 0, packetData.length);
             return 0;
         } catch ( IOException e ) {
             System.out.println("ReceivePacket error: " + e);

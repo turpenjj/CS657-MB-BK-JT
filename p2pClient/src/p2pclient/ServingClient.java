@@ -39,16 +39,16 @@ public class ServingClient extends Util implements Runnable {
     }
 
     public void run() {
-        System.out.println("Started a new thread for ServingClient");
-        System.out.println("ChunkManager length: " + chunkManagers.length);
-        for ( int i = 0; i < chunkManagers.length; i++ ) {
-            System.out.println("ChunkManager[" + i + "] " + chunkManagers[i].filename);
-        }
+//        System.out.println("Started a new thread for ServingClient");
+//        System.out.println("ChunkManager length: " + chunkManagers.length);
+//        for ( int i = 0; i < chunkManagers.length; i++ ) {
+//            System.out.println("ChunkManager[" + i + "] " + chunkManagers[i].filename);
+//        }
 
         //Spin up a thread for listening on the socket.
         listener = new MessageReceive(listeningPort, acceptedPackets, true);
         listener.start();
-
+System.out.println("ServingClient listening on port " + listeningPort);
         //Continually poll the listener for requests, then determine if we want
         //to respond and respond if we want
         for ( ;; ) {

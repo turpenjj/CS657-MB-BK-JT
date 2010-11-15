@@ -42,7 +42,7 @@ public class MessageSend {
             InetAddress ipAddress = peer.clientIp;
             DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, ipAddress, peer.listeningPort);
             sendingSocket.send(packet);
-            System.out.println("Sent out packet");
+            System.out.println("Sent out packet to " + ipAddress + " on port " + peer.listeningPort);;
         } catch ( IOException e) {
             System.out.println("SocketSend encountered an error: " + e);
         }
