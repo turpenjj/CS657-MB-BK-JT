@@ -8,6 +8,9 @@ package p2pclient;
  * char[] filename; // null-terminated filename
  * uint32_t listeningPort; // port to send the response to
  *
+ * @note The Tracker Query message data format is the same as the Tracker Torrent
+ * Query message data format.
+ *
  * @author Jeremy
  */
 public class TrackerQuery {

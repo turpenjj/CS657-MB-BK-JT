@@ -10,8 +10,16 @@ import java.net.*;
 public class ComponentTester {
     
     public static void main (String args[]) throws Exception {
-        if (ComponentTesterConfig.TEST_TRACKER_TORRENT_REGISTRATION) {
-            TestTrackerTorrentRegistration();
+
+        /**
+         * NOTE: try to test all the simplest pieces first, the the subcomponents,
+         * then the higher-level components.
+         */
+        if (ComponentTesterConfig.TEST_LIST_REMOVAL_ALGORITHM) {
+            TestListRemovalAlgorithm();
+        }
+        if (ComponentTesterConfig.TEST_UTIL_EXTRACT_NULL_TERMINATED_STRING) {
+            TestUtilExtractNullTerminatedString();
         }
         if (ComponentTesterConfig.TEST_TORRENT) {
             TestTorrent();
@@ -19,17 +27,20 @@ public class ComponentTester {
         if (ComponentTesterConfig.TEST_TRACKER_REGISTRATION_IMPORT_EXPORT) {
             TestTrackerRegistrationImportExport();
         }
-        if (ComponentTesterConfig.TEST_TRACKER_QUERY_RESPONSE_IMPORT_EXPORT) {
-            TestTrackerQueryResponseImportExport();
-        }
         if (ComponentTesterConfig.TEST_TRACKER_QUERY_IMPORT_EXPORT) {
             TestTrackerQueryImportExport();
         }
-        if (ComponentTesterConfig.TEST_UTIL_EXTRACT_NULL_TERMINATED_STRING) {
-            TestUtilExtractNullTerminatedString();
+        if (ComponentTesterConfig.TEST_TRACKER_QUERY_RESPONSE_IMPORT_EXPORT) {
+            TestTrackerQueryResponseImportExport();
         }
-        if (ComponentTesterConfig.TEST_SERVING_CLIENT) {
-            TestServingClient();
+        if (ComponentTesterConfig.TEST_TRACKER_TORRENT_REGISTRATION) {
+            TestTrackerTorrentRegistration();
+        }
+        if (ComponentTesterConfig.TEST_TRACKER_TORRENT_QUERY) {
+            TestTrackerTorrentQuery();
+        }
+        if (ComponentTesterConfig.TEST_TRACKER_TORRENT_QUERY_RESPONSE) {
+            TestTrackerTorrentQueryResponse();
         }
         if (ComponentTesterConfig.TEST_CHUNK_LIST_REQUEST_IMPORT_EXPORT) {
             TestChunkListRequestImportExport();
@@ -43,11 +54,199 @@ public class ComponentTester {
         if (ComponentTesterConfig.TEST_CHUNK_RESPONSE_IMPORT_EXPORT) {
             TestChunkResponseImportExport();
         }
+        if (ComponentTesterConfig.TEST_SERVING_CLIENT) {
+            TestServingClient();
+        }
     }
 
-    private static void TestTrackerTorrentRegistration() throws Exception {
-        TrackerTorrentRegistration trackerRegisteredTorrents = new TrackerTorrentRegistration();
+    private static void TestListRemovalAlgorithm() {
+        Integer[] list = {0, 1, 2, 3, 4, 5};
+        Integer[] removeList;
+        Integer[] retList;
+
+        Integer[] listRemoveFirst = {0};
+        removeList = listRemoveFirst;
+        retList = RemoveFromList(list, removeList);
+        if (    retList.length != list.length - removeList.length ||
+                IsIntegerInList(0, retList) ||
+                !(  IsIntegerInList(1, retList) &&
+                    IsIntegerInList(2, retList) &&
+                    IsIntegerInList(3, retList) &&
+                    IsIntegerInList(4, retList) &&
+                    IsIntegerInList(5, retList) ) ) {
+            System.out.println("Error: Failed removing first element in list");
+        } else {
+            System.out.println("Success: Removed first element in list");
+        }
+
+        Integer[] listRemoveLast = {5};
+        removeList = listRemoveLast;
+        retList = RemoveFromList(list, removeList);
+        if (    retList.length != list.length - removeList.length ||
+                IsIntegerInList(5, retList) ||
+                !(  IsIntegerInList(0, retList) &&
+                    IsIntegerInList(1, retList) &&
+                    IsIntegerInList(2, retList) &&
+                    IsIntegerInList(3, retList) &&
+                    IsIntegerInList(4, retList) ) ) {
+            System.out.println("Error: Failed removing last element in list");
+        } else {
+            System.out.println("Success: Removed last element in list");
+        }
+
+        Integer[] listRemoveMiddle = {3};
+        removeList = listRemoveMiddle;
+        retList = RemoveFromList(list, removeList);
+        if (    retList.length != list.length - removeList.length ||
+                IsIntegerInList(3, retList) ||
+                !(  IsIntegerInList(0, retList) &&
+                    IsIntegerInList(1, retList) &&
+                    IsIntegerInList(2, retList) &&
+                    IsIntegerInList(4, retList) &&
+                    IsIntegerInList(5, retList) ) ) {
+            System.out.println("Error: Failed removing middle element in list");
+        } else {
+            System.out.println("Success: Removed middle element in list");
+        }
+
+        Integer[] listRemoveAll = list.clone();
+        removeList = listRemoveAll;
+        retList = RemoveFromList(list, removeList);
+        if ( retList.length != list.length - removeList.length ) {
+            System.out.println("Error: Failed removing all elements in list");
+        } else {
+            System.out.println("Success: Removed all elements in list");
+        }
+
+        Integer[] listRemoveFirstAndLast = {0, 5};
+        removeList = listRemoveFirstAndLast;
+        retList = RemoveFromList(list, removeList);
+        if (    retList.length != list.length - removeList.length ||
+                IsIntegerInList(0, retList) ||
+                IsIntegerInList(5, retList) ||
+                !(  IsIntegerInList(1, retList) &&
+                    IsIntegerInList(2, retList) &&
+                    IsIntegerInList(3, retList) &&
+                    IsIntegerInList(4, retList) ) ) {
+            System.out.println("Error: Failed removing first and last element in list");
+        } else {
+            System.out.println("Success: Removed first and last element in list");
+        }
+
+        Integer[] listRemoveDisparate = {1, 2, 4};
+        removeList = listRemoveDisparate;
+        retList = RemoveFromList(list, removeList);
+        if (    retList.length != list.length - removeList.length ||
+                IsIntegerInList(1, retList) ||
+                IsIntegerInList(2, retList) ||
+                IsIntegerInList(4, retList) ||
+                !(  IsIntegerInList(0, retList) &&
+                    IsIntegerInList(3, retList) &&
+                    IsIntegerInList(5, retList) ) ) {
+            System.out.println("Error: Failed removing disparate elements in list");
+        } else {
+            System.out.println("Success: Removed disparate elements in list");
+        }
+    }
+
+    private static boolean IsIntegerInList(Integer integer, Integer[] list) {
+        for (Integer check : list) {
+            if (check.equals(integer)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Template code for removing an element from a list. This example uses a
+     * list of integers and the criteria for removal is the element is in a list
+     * of integers to remove.
+     *
+     * @param list List to remove from
+     * @param listToRemove List to be removed
+     * @return new list with specified elements removed
+     */
+    private static Integer[] RemoveFromList(Integer[] list, Integer[] listToRemove) {
+        int currentIndex = 0;
+        Integer[] tempList;
+
+        for (Integer integer : list) {
+            if (IsIntegerInList(integer, listToRemove)) {
+                tempList = new Integer[list.length - 1];
+                System.arraycopy(list, 0, tempList, 0, currentIndex);
+                System.arraycopy(list, currentIndex + 1, tempList, currentIndex, tempList.length - currentIndex);
+                list = tempList;
+                continue;
+            }
+            currentIndex++;
+        }
+
+        return list;
+    }
+
+    private static void TestTrackerTorrentQueryResponse() throws Exception {
+        Torrent torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile2.txt");
+
+        TrackerTorrentResponse ttqr = new TrackerTorrentResponse(torrent);
+        byte[] messageData = ttqr.ExportMessagePayload();
+        if (messageData != null) {
+            System.out.println("Success: TrackerTorrentResponse::ExportMessagePayload succeeded");
+        } else {
+            System.out.println("Error: TrackerTorrentResponse::ExportMessagePayload failed");
+        }
+
+        TrackerTorrentResponse ttqrImport = new TrackerTorrentResponse();
+        ttqrImport.ImportMessagePayload(messageData);
+        if (ttqrImport.torrent != null &&
+                ttqrImport.torrent.filename.contentEquals(torrent.filename) &&
+                ttqrImport.torrent.filesize == torrent.filesize &&
+                ttqrImport.torrent.numChunks == torrent.numChunks) {
+            System.out.println("Success: TrackerTorrentResponse::ImportMessagePayload succeeded");
+        } else {
+            System.out.println("Error: TrackerTorrentResponse::ImportMessagePayload succeeded");
+        }
+    }
+
+    private static void TestTrackerTorrentQuery() throws Exception {
+        TrackerTorrentRegistration[] trackerRegisteredTorrents = new TrackerTorrentRegistration[1];
+        TrackerTorrentRegistration tracker;
+        Torrent[] torrents;
+        int listeningPort = 28000;
+
+        torrents = RegisterTestTorrents(trackerRegisteredTorrents);
+        tracker = trackerRegisteredTorrents[0];
+
+        TrackerTorrentQuery trackerTorrentQuery = new TrackerTorrentQuery(torrents[0].filename, listeningPort);
         
+        byte[] messageData = trackerTorrentQuery.ExportQuery();
+
+        System.out.println("Filename = " + trackerTorrentQuery.filename +
+                ", listeningPort = " + trackerTorrentQuery.listeningPort +
+                ", messageData (" + messageData.length + ")");
+
+        TrackerTorrentQuery trackerTorrentQueryImport = new TrackerTorrentQuery();
+
+        if (trackerTorrentQueryImport.ImportQuery(messageData)) {
+            System.out.println("Import reported success: Filename = " + trackerTorrentQueryImport.filename +
+                    ", listeningPort = " + trackerTorrentQueryImport.listeningPort);
+        } else {
+            System.out.println("Import reported failure");
+        }
+    }
+
+    /**
+     * Registers a few test torrents with a tracker
+     * 
+     * @param TrackerTorrentRegistration[out] Populated with the TrackerTorrentRegistration
+     * @return List of torrents registered
+     *
+     * @throws Exception
+     */
+    private static Torrent[] RegisterTestTorrents(TrackerTorrentRegistration[] tracker) throws Exception {
+        TrackerTorrentRegistration trackerRegisteredTorrents = new TrackerTorrentRegistration();
+        Torrent[] torrents;
+
         Torrent torrent;
         TrackerTorrentRegistration torrentRegistration;
         byte[] messageData;
@@ -67,34 +266,51 @@ public class ComponentTester {
         trackerRegisteredTorrents.ImportMessagePayload(messageData);
         trackerRegisteredTorrents.ImportMessagePayload(messageData2);
 
-        if (trackerRegisteredTorrents.Search("TestFile.txt") != null) {
+        torrents = trackerRegisteredTorrents.GetAllTorrents();
+
+        if (tracker != null) {
+            tracker[0] = trackerRegisteredTorrents;
+        }
+
+        return torrents;
+    }
+
+    private static void TestTrackerTorrentRegistration() throws Exception {
+        TrackerTorrentRegistration[] trackerRegisteredTorrents = new TrackerTorrentRegistration[1];
+        TrackerTorrentRegistration tracker;
+        Torrent[] torrents;
+
+        torrents = RegisterTestTorrents(trackerRegisteredTorrents);
+        tracker = trackerRegisteredTorrents[0];
+
+        if (tracker.Search(torrents[0].filename) != null) {
             System.out.println("Success: Found file");
         } else {
             System.out.println("Error: Failed to find file");
         }
-        if (trackerRegisteredTorrents.Search("TestFile2.txt") != null) {
+        if (tracker.Search(torrents[1].filename) != null) {
             System.out.println("Success: Found file");
         } else {
             System.out.println("Error: Failed to find file");
         }
-        if (trackerRegisteredTorrents.Search("testfile2.txt") != null) {
+        if (tracker.Search(torrents[1].filename.toLowerCase()) != null) {
             System.out.println("Success: Found file");
         } else {
             System.out.println("Error: Failed to find file");
         }
-        if (trackerRegisteredTorrents.Search("UnregisteredFile") == null) {
+        if (tracker.Search("UnregisteredFile") == null) {
             System.out.println("Success: Didn't find file");
         } else {
             System.out.println("Error: Found file");
         }
 
-        trackerRegisteredTorrents.DeregisterTorrent(torrent);
-        if (trackerRegisteredTorrents.Search("TestFile.txt") == null) {
+        tracker.DeregisterTorrent(torrents[0]);
+        if (tracker.Search(torrents[0].filename) == null) {
             System.out.println("Success: Didn't find file");
         } else {
             System.out.println("Error: Found file");
         }
-        if (trackerRegisteredTorrents.Search("TestFile2.txt") != null) {
+        if (tracker.Search(torrents[1].filename) != null) {
             System.out.println("Success: Found file");
         } else {
             System.out.println("Error: Failed to find file");

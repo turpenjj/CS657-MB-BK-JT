@@ -215,7 +215,7 @@ public class TrackerRegistration {
                 if (loopPeer.timestampMsec + this.PEER_TIMEOUT_MSEC < currentTime) {
                     tempRegisteredPeers = new RegisteredPeer[this.registeredPeers.length - 1];
                     System.arraycopy(this.registeredPeers, 0, tempRegisteredPeers, 0, currentIndex);
-                    System.arraycopy(this.registeredPeers, currentIndex, tempRegisteredPeers, currentIndex, tempRegisteredPeers.length - currentIndex);
+                    System.arraycopy(this.registeredPeers, currentIndex + 1, tempRegisteredPeers, currentIndex, tempRegisteredPeers.length - currentIndex);
                     this.registeredPeers = tempRegisteredPeers;
                     continue;
                 }

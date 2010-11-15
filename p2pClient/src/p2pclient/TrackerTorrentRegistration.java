@@ -16,6 +16,9 @@ package p2pclient;
  * }
  *
  * CHUNK_HASH_SIZE is 20
+ *
+ * @note The Tracker Torrent Registration message data format is the same as the
+ * Tracker Torrent Response message data format.
  * 
  * Torrents are removed from the list when no one has registered them within a
  * certain timeout window AND no one is sharing any chunks.
@@ -80,7 +83,7 @@ public class TrackerTorrentRegistration {
             if (torrent.filename.equalsIgnoreCase(loopTorrent.filename)) {
                 tempTorrents = new Torrent[this.registeredTorrents.length - 1];
                 System.arraycopy(this.registeredTorrents, 0, tempTorrents, 0, currentIndex);
-                System.arraycopy(this.registeredTorrents, currentIndex, tempTorrents, currentIndex, tempTorrents.length - currentIndex);
+                System.arraycopy(this.registeredTorrents, currentIndex + 1, tempTorrents, currentIndex, tempTorrents.length - currentIndex);
                 this.registeredTorrents = tempTorrents;
                 continue;
             }
