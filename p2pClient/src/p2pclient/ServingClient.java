@@ -73,8 +73,10 @@ public class ServingClient extends Util implements Runnable {
                             System.out.println("ServingClient: Responding to chunk request for file " + chunkRequest.filename + "(" + chunkRequest.chunkNumber + ")");
                             peer[0].listeningPort = chunkRequest.listeningPort;
                             SendChunkResponse(peer[0], chunkRequest, sessionID[0]);
-                            //TODO: Get Peer from Manager, then update him directly
                             persistentPeer.creditForUs++;
+                            persistentPeer.lastServiced = Util.GetCurrentTime();
+                        } else {
+                            System.out.println("Ignoring request from peer, not enough credit");
                         }
                         break;
                 }

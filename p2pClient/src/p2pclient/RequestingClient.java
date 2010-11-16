@@ -25,7 +25,7 @@ public class RequestingClient extends Util implements Runnable {
     long timestamp;
     Listener[] listenerList;
     private int nextSessionID = 1;
-    private int DEFAULT_LISTEN_TIMEOUT = 15000;
+    private int DEFAULT_LISTEN_TIMEOUT = 5000;
     private int LIST_REQUEST_FREQUENCY = 20000;
     private ChunkManager chunkManager;
     private PeerManager peerManager;
@@ -47,17 +47,27 @@ public class RequestingClient extends Util implements Runnable {
 
     //This is what gets run when the thread is started
     public void run() {
-        System.out.println("Started a thread for RequestingClient");
-        long timeForListRequest = GetCurrentTime() + LIST_REQUEST_FREQUENCY;
+        System.out.println("RequestingClient: Started a thread for RequestingClient");
+        long timeForListRequest = GetCurrentTime();
 
-        RequestChunkList();
         for ( ;; ) {
             if ( timeForListRequest < GetCurrentTime() ) {
                 timeForListRequest = GetCurrentTime() + LIST_REQUEST_FREQUENCY;
                 RequestChunkList();
+                System.out.println("chunkStatus: " + chunkManager.chunkList[1].chunkInfo.status);
             }
             //TODO: Determine which chunk(s) to spin up requests for
-
+            ChunkInfo[] missingChunks = chunkManager.NeededChunks();
+            for (int i = 0; i < missingChunks.length; i++) {
+                if ( servingHost.HasChunk(filename, i) ) {
+                    if ( servingHost.ShouldRequest() ) {
+                        System.out.println("RequestingClient: Requesting chunk " + i + " from " + servingHost.clientIp);
+                        RequestChunk(i);
+                    } else {
+                        System.out.println("RequestingClient: Choosing not to request a chunk from " + servingHost.clientIp);
+                    }
+                }
+            }
                 //Loop through listeners and check response status for each listener
                 for ( int i = 0; listenerList != null && i < listenerList.length; i++ ) {
                     PacketType[] packetType = new PacketType[1];
@@ -67,24 +77,35 @@ public class RequestingClient extends Util implements Runnable {
                         case 0: //still waiting
                             break;
                         case 1: //request complete
-                            System.out.println("Completed a Request");
+                            System.out.println("RequestingClient: Completed a Request");
+System.out.println("MissingChunks: " + chunkManager.NeededChunks().length);
+System.out.println("Chunk[1] = " + chunkManager.chunkList[1].chunk);
                             switch (packetType[0]) {
                                 case CHUNK_LIST_RESPONSE:
                                     ProcessChunkListResponse(data[0]);
                                     break;
                                 case CHUNK_RESPONSE:
+                                    servingHost.outstandingRequests--;
                                     ProcessChunkResponse(data[0]);
                                     break;
                             }
                             RemoveListenerFromList(listenerList[i]);
                             break;
                         case 2: //timeout
-                            if ( packetType[0] == PacketType.CHUNK_RESPONSE ) {
-                                chunkManager.chunkList[listenerList[i].chunkNumber].chunkInfo.status = 0;
+                            System.out.println("11111111111111111Request timed out: " + listenerList[i].chunkNumber );
+                            if ( listenerList[i].requestType[0] == PacketType.CHUNK_RESPONSE ) {
+                                TimeoutChunkRequest(listenerList[i].chunkNumber);
+                                System.out.println("AM I A MORON");
+//                                chunkManager.UpdateChunkStatus(listenerList[i].chunkNumber, 0);
+//                                Thread.yield();
+//                                chunkManager.chunkList[listenerList[i].chunkNumber].chunkInfo.status = 0;
+                                servingHost.outstandingRequests--;
                             }
                             RemoveListenerFromList(listenerList[i]);
+                            System.out.println("!!!!!!!!!!!! missing chunks: " + chunkManager.NeededChunks().length);
                             break;
                     }
+                    Thread.yield();
                 }
         //TODO: add requests for missing chunks
         //NOTE: Each listener will process and store the results when they are received            
@@ -99,7 +120,11 @@ public class RequestingClient extends Util implements Runnable {
 
     }
 
-    private int FindListenerIndex(Listener listener) {
+    private synchronized void TimeoutChunkRequest(int chunkNumber) {
+        chunkManager.chunkList[chunkNumber].chunkInfo.status = 0;
+    }
+
+    private synchronized int FindListenerIndex(Listener listener) {
         int index = 0;
         while ( index < listenerList.length ) {
             if ( listenerList[index].equals(listener) ) {
@@ -151,7 +176,8 @@ public class RequestingClient extends Util implements Runnable {
     private synchronized void RequestChunkList() {
         Listener newListener = new Listener(PacketType.CHUNK_LIST_RESPONSE, nextSessionID++, -1, DEFAULT_LISTEN_TIMEOUT);
         AddListenerToList(newListener);
-System.out.println("Sending out a new chunk list request " + (nextSessionID - 1));
+
+        System.out.println("RequestingClient: Sending out a new chunk list request for " + filename);
         ChunkListRequest chunkListRequest = new ChunkListRequest(filename, newListener.listener.listeningPort);
         MessageSend sender = new MessageSend();
         sender.SendCommunication(servingHost, PacketType.CHUNK_LIST_REQUEST, newListener.sessionID, chunkListRequest.ExportMessagePayload());
@@ -165,6 +191,8 @@ System.out.println("Sending out a new chunk list request " + (nextSessionID - 1)
         Listener newListener = new Listener(PacketType.CHUNK_RESPONSE, nextSessionID++, chunkNumber, DEFAULT_LISTEN_TIMEOUT);
         AddListenerToList(newListener);
 
+        servingHost.outstandingRequests++;
+        System.out.println("RequestingClient: Sending out a new chunk request for " + filename + "-" + chunkNumber);
         ChunkRequest chunkRequest = new ChunkRequest(filename, chunkNumber, newListener.listener.listeningPort);
         chunkManager.chunkList[chunkNumber].chunkInfo.status = 1; //downloading
         MessageSend sender = new MessageSend();
@@ -189,7 +217,7 @@ System.out.println("Sending out a new chunk list request " + (nextSessionID - 1)
             ChunkListResponse chunkListResponse = new ChunkListResponse();
             chunkListResponse.ImportMessagePayload(rawData);
 
-            System.out.println("Received a chunk list for " + chunkListResponse.filename);
+            System.out.println("RequestingClient: Received a chunk list for " + chunkListResponse.filename);
             //TODO: Update peer in Peer Manager
             peerManager.UpdatePeer(servingHost);
             servingHost.UpdateChunkList(filename, chunkListResponse.chunkList);
@@ -204,8 +232,10 @@ System.out.println("Sending out a new chunk list request " + (nextSessionID - 1)
             chunkResponse.ImportMessagePayload(rawData);
             chunkNumber = chunkResponse.chunkNumber;
             chunkData = chunkResponse.chunkData;
-            
-            chunkManager.UpdateChunk(chunkNumber, chunkData, servingHost);       
+
+            System.out.println("ReceivingClient: received chunk " + chunkNumber + " for " + filename);
+            chunkManager.UpdateChunk(chunkNumber, chunkData, servingHost);
+            servingHost.creditForThem++;
         }        
     }
 
@@ -221,23 +251,23 @@ class Listener {
 
     Listener(PacketType requestType, int sessionID, int chunkNumber, int timeoutValue) {
         PacketType[] packetType = {requestType};
-        this.listener = new MessageReceive(packetType);
+        this.listener = new MessageReceive(packetType, true);
         this.requestType = packetType;
         this.sessionID = sessionID;
         this.chunkNumber = chunkNumber;
         this.timeout = Util.GetCurrentTime() + timeoutValue;
         this.status = 0;
         this.listener.start();
-        System.out.println("SessionID: " + sessionID);
+        System.out.println("RequestingClient: SessionID: " + sessionID);
     }
 
     public int GetMessage(PacketType[] receivedPacketType, byte[][] packetData) {
         if ( (packetData[0] = listener.GetMessage(sessionID, requestType, null, receivedPacketType, null)) != null ) {
-            System.out.println("Received a message!");
+            System.out.println("RequestingClient: Received a message!");
             listener.Stop();
             status = 1;
         } else if ( Util.GetCurrentTime() > timeout ) {
-            System.out.println("requesting Listener timed out");
+            System.out.println("RequestingClient: requesting Listener timed out");
             //TODO: Implement stop() method for MessageReceive
             listener.Stop();
             status = 2;

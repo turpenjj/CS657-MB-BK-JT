@@ -100,6 +100,10 @@ public class ChunkManager {
         }
     }
 
+    public synchronized void UpdateChunkStatus(int chunkNumber, int status) {
+        chunkList[chunkNumber].chunkInfo.status = status;
+    }
+
     /*
      * Description:
      *   Returns the data associated with the given chunk

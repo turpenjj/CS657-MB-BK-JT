@@ -576,6 +576,7 @@ public class ComponentTester {
     private static void TestServingClient() {
         int listeningPort = 54321;
         ChunkManager[] chunkManagers = new ChunkManager[5];
+        ChunkManager[] reqchunkManagers = new ChunkManager[5];
         PeerManager peerManager = new PeerManager();
 
         //Initialize chunkManagers;
@@ -592,20 +593,24 @@ public class ComponentTester {
             chunkManagers[i].chunkList[1].chunk[1] = (byte)2;
             chunkManagers[i].chunkList[1].chunk[2] = (byte)i;
         }
+        //Initialize Requestor chunkManagers
+        for ( int i = 0; i < 5; i++) {
+            reqchunkManagers[i] = new ChunkManager("Filename" + i);
+            reqchunkManagers[i].chunkList = new FileChunk[2];
+            byte[] tempHash = {(byte)i,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
+            reqchunkManagers[i].chunkList[0] = new FileChunk(0, tempHash, 0, null);
+            byte[] tempHash2 = {0,(byte)i,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
+            reqchunkManagers[i].chunkList[1] = new FileChunk(1, tempHash2, 0, null);
+    }
 
         ServingClient servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
         servingClient.start();
-//        try {
-//            Thread.sleep(2000);
-//        } catch ( InterruptedException e ) {
-//
-//        }
 
         try {
             Peer dummyPeer = new Peer(InetAddress.getLocalHost(), 51515);
             peerManager.UpdatePeer(dummyPeer);
             Peer peer = new Peer(InetAddress.getLocalHost(), 54321);
-            RequestingClient requestingClient = new RequestingClient(peer, "Filename1", chunkManagers[1], peerManager);
+            RequestingClient requestingClient = new RequestingClient(peer, "Filename1", reqchunkManagers[1], peerManager);
             requestingClient.start();
         } catch ( UnknownHostException e ) {
             System.out.println("We're in trouble... we can't find ourself " + e);

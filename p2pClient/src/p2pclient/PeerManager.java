@@ -15,9 +15,11 @@ import java.net.*;
  */
 public class PeerManager {
     Peer[] peerList;
+    private static int PEER_UNCHOKE = 30000;
 
     PeerManager() {
         peerList = null;
+        PEER_UNCHOKE = 30000;
     }
 
     /*
@@ -108,8 +110,23 @@ public class PeerManager {
         return null;
     }
 
+    /*
+     * Determines if the peer is worthy of our time.  Three factors determine
+     * if we'll play nice.
+     *
+     * 1) If they have more credit than the amount we think they have for us
+     * 2) If we have outstanding requests to them that is greater than the
+     *    amount of credit we have more than them
+     * 3) If we haven't serviced a request from this host for awhile, we'll
+     *    service one request to potentially unchoke them.
+     */
     public synchronized boolean ShouldTradeWith(Peer peer) {
         //TODO: Implement algorithm to determine if we want to share with the given peer or not
+        if ( peer.creditForThem > peer.creditForUs ||
+                peer.outstandingRequests > (peer.creditForThem - peer.creditForUs) ||
+                peer.lastServiced < (Util.GetCurrentTime() - PEER_UNCHOKE) ) {
+                return true;
+        }
         return false;
     }
 

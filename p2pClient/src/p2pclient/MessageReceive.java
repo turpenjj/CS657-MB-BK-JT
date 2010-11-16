@@ -48,7 +48,7 @@ public class MessageReceive extends Util implements Runnable {
         }
     }
 
-    MessageReceive(PacketType[] acceptedPacketTypes) {
+    MessageReceive(PacketType[] acceptedPacketTypes, boolean permanent) {
         this.acceptedPacketTypes = acceptedPacketTypes;
         this.listeningPort = BASE_SOCKET_PORT;
         while ( listeningPort < MAX_PORT_NUMBER )  {
@@ -56,7 +56,7 @@ public class MessageReceive extends Util implements Runnable {
                 this.listeningSocket = new DatagramSocket(this.listeningPort);
                 System.out.println("MessageReceive: Opened a socket on port " + this.listeningPort);
                 this.listeningSocket.setSoTimeout(this.SOCKET_TIMEOUT_MS);
-                this.permanent = false;
+                this.permanent = permanent;
                 break;
             } catch ( IOException e ) {
                 this.listeningPort += 1;

@@ -17,6 +17,8 @@ public class Peer {
     int[][] chunkList; //[fileIndex][chunkIndex]
     public int creditForThem; //The credit associated with this peer
     public int creditForUs; //An approximation of the credit this peer has for us
+    public int outstandingRequests; //The number of outstanding chunk requests for this peer
+    long lastServiced; //timestamp of the last time we've serviced this peer
 
     Peer(InetAddress ip, int port) {
         clientIp = ip;
@@ -25,6 +27,8 @@ public class Peer {
         creditForUs = 0;
         fileList = null;
         chunkList = null;
+        outstandingRequests = 0;
+        lastServiced = Util.GetCurrentTime();
     }
 
     /*
@@ -110,6 +114,17 @@ public class Peer {
         AddFileToList(filename);
         int fileIndex = GetFileIndex(filename);
         this.chunkList[fileIndex] = chunkList;
+    }
 
+    /*
+     * Determines if we should request a chunk from this host.  If we don't have
+     * much credit with them, we might not want to request a lot of things from
+     * them.  This will help throttle our requests to a given peer.
+     */
+    public synchronized boolean ShouldRequest() {
+        if ( outstandingRequests > creditForUs ) {
+            return false;
+        }
+        return true;
     }
 }

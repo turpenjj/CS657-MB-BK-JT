@@ -12,7 +12,7 @@ import java.security.NoSuchAlgorithmException;
  * @author Matt
  */
 public class FileChunk {
-    ChunkInfo chunkInfo;
+    public volatile ChunkInfo chunkInfo;
     byte[] chunk;
 
     /*
