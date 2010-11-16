@@ -19,7 +19,7 @@ import java.net.*;
  *
  * @author Matt
  */
-public class MessageReceive extends Util implements Runnable {
+public class MessageReceive implements Runnable {
     private Thread runner;
     private volatile boolean stop = false;
     private boolean permanent;
@@ -45,17 +45,17 @@ public class MessageReceive extends Util implements Runnable {
                 this.permanent = true;
             }
         } catch ( IOException e ) {
-             Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Receieved socket error: " + e);
+             Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "Receieved socket error: " + e);
         }
     }
 
     MessageReceive(PacketType[] acceptedPacketTypes, boolean permanent) {
         this.acceptedPacketTypes = acceptedPacketTypes;
-        this.listeningPort = BASE_SOCKET_PORT;
+        this.listeningPort = Util.GetRandomHighPort(new java.util.Random());
         while ( listeningPort < MAX_PORT_NUMBER )  {
             try {
                 this.listeningSocket = new DatagramSocket(this.listeningPort);
-                Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Opened a socket on port " + this.listeningPort);
+                Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "Opened a socket on port " + this.listeningPort);
                 this.listeningSocket.setSoTimeout(this.SOCKET_TIMEOUT_MS);
                 this.permanent = permanent;
                 break;
@@ -79,7 +79,12 @@ public class MessageReceive extends Util implements Runnable {
     }
 
     public void run() {
-        Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Started a Message Receive thread " + this.listeningSocket.getLocalPort());
+        if (this.listeningSocket != null) {
+            Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "Started a Message Receive thread " + this.listeningSocket.getLocalPort());
+        } else {
+            Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "Listening socket not created");
+            return;
+        }
 
         /* Outline:
          * Call ReceiveCommunication in a loop. Don't worry about timeouts. When a full message is received, call ProcessQuery().
@@ -92,7 +97,6 @@ public class MessageReceive extends Util implements Runnable {
             MessageBuffer messageBuff;
 
             if ( ReceivePacket(peer, packetHeader, packetInData) != -1 ) {
-                Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: received a packet");
                 receivedPacketData = packetInData[0];
                 boolean accept = false;
                 for (PacketType type : this.acceptedPacketTypes) {
@@ -102,7 +106,7 @@ public class MessageReceive extends Util implements Runnable {
                     }
                 }
                 if ( accept ) {
-                    Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Accepting this packet");
+                    Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "Accepting this packet");
                     if ( (messageBuff = FindMessage(packetHeader[0].sessionID)) != null ) {
                         messageBuff.AddDataToMessage(packetHeader[0], receivedPacketData);
                     } else {
@@ -112,7 +116,7 @@ public class MessageReceive extends Util implements Runnable {
                     }
                 } else {
                     // TODO: discard received packet data
-                    Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Rejecting this packet");
+                    Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "Rejecting this packet");
                 }
             }
         }
@@ -126,9 +130,8 @@ public class MessageReceive extends Util implements Runnable {
      * @param peer[out]
      * @param packetType[out]
      * @param sessionID[out]
-     * @param packetData[out]
      *
-     * @return true if a message was found and output parameters are populated, false otherwise
+     * @return Message data if there was a matching message, NULL otherwise
      */
     public synchronized byte[] GetMessage(int filterSessionID, PacketType[] filterPacketType, Peer[] peer, PacketType[] packetType, int[] sessionID) {
         MessageBuffer message;
@@ -158,7 +161,7 @@ public class MessageReceive extends Util implements Runnable {
                 MessageBuffer loopMessage = this.messageBuffers[i];
                 if ( (messageData = loopMessage.IsMessageComplete(peer, packetType, sessionID)) != null ) {
                     for (PacketType type : this.acceptedPacketTypes) {
-                        Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Checking " + type + " vs " + packetType[0]);
+                        Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "Checking " + type + " vs " + packetType[0]);
                         if (packetType != null && packetType[0] == type) {
                             // TODO: remove message from this.messageBuffers
                             RemoveMessageFromList(loopMessage);
@@ -215,7 +218,7 @@ public class MessageReceive extends Util implements Runnable {
     }
 
     private synchronized MessageBuffer FindMessage(int sessionID) {
-        long currentTimeInMsec = GetCurrentTime();
+        long currentTimeInMsec = Util.GetCurrentTime();
 
         if ( this.messageBuffers == null ) {
             return null;

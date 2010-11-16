@@ -107,7 +107,7 @@ public class TrackerRegistration {
 
         File dir = new File(path);
         FileFilter filter = new RealFileFilter();
-        if (dir != null) {
+        if (dir != null && dir.exists() && dir.isDirectory()) {
             File[] files = dir.listFiles(filter);
             String[] filenames = new String[0];
             String[] temp;

@@ -9,7 +9,7 @@ package p2pclient;
  *
  * @author Matt
  */
-public class ChunkListRequest extends Util {
+public class ChunkListRequest {
     public int receivingPort;
     public String filename;
 
@@ -39,8 +39,8 @@ public class ChunkListRequest extends Util {
         int requestLength = filename.length() + 5; //filename + receiving port
         byte[] requestInBytes = new byte[requestLength];
 
-        IntToByteArray(requestInBytes, 0, receivingPort);
-        InsertNullTerminatedString(requestInBytes, 4, filename);
+        Util.IntToByteArray(requestInBytes, 0, receivingPort);
+        Util.InsertNullTerminatedString(requestInBytes, 4, filename);
 
         return requestInBytes;
     }
@@ -50,8 +50,8 @@ public class ChunkListRequest extends Util {
      *   Imports the payload portion of the request
      */
     public void ImportMessagePayload(byte[] data) {
-        receivingPort = ByteArrayToInt(data, 0);
-        filename = ExtractNullTerminatedString(data, 4, null);
+        receivingPort = Util.ByteArrayToInt(data, 0);
+        filename = Util.ExtractNullTerminatedString(data, 4, null);
     }
 
 }

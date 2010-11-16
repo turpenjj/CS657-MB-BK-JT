@@ -9,7 +9,7 @@ package p2pclient;
  *
  * @author Matt
  */
-public class ChunkListResponse extends Util {
+public class ChunkListResponse {
     String filename;
     int[] chunkList;
 
@@ -53,8 +53,8 @@ public class ChunkListResponse extends Util {
         }
         int requestLength = filename.length() + 1 + chunkListLength;
         byte[] requestInBytes = new byte[requestLength];
-        int indexIntoByteArray = InsertNullTerminatedString(requestInBytes, 0, filename);
-        indexIntoByteArray = IntArrayToByteArray(requestInBytes, indexIntoByteArray, chunkList);
+        int indexIntoByteArray = Util.InsertNullTerminatedString(requestInBytes, 0, filename);
+        indexIntoByteArray = Util.IntArrayToByteArray(requestInBytes, indexIntoByteArray, chunkList);
 
         return requestInBytes;
     }
@@ -65,11 +65,11 @@ public class ChunkListResponse extends Util {
      */
     public void ImportMessagePayload(byte[] data) {
         int indexIntoByteArray[] = new int[1];
-        filename = ExtractNullTerminatedString(data, 0, indexIntoByteArray);
+        filename = Util.ExtractNullTerminatedString(data, 0, indexIntoByteArray);
 
         int chunkListLength = data.length - indexIntoByteArray[0];
         byte[] rawChunkList = new byte[chunkListLength];
         System.arraycopy(data, indexIntoByteArray[0], rawChunkList, 0, chunkListLength);
-        chunkList = ByteArrayToIntArray(rawChunkList);
+        chunkList = Util.ByteArrayToIntArray(rawChunkList);
     }
 }

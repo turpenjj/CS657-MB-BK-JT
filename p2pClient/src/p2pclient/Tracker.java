@@ -19,7 +19,7 @@ import java.net.*;
  *
  * @author Jeremy
  */
-public class Tracker extends Util implements Runnable {
+public class Tracker implements Runnable {
     private Thread runner;
     private MessageReceive messageReceiver; // receives messages on the tracker listening port
     private MessageSend messageSender; // all sends are done on the listening thread in response to queries

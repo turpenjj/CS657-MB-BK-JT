@@ -11,7 +11,7 @@ import java.net.*;
  *
  * @author Matt
  */
-public class Host extends Util implements Runnable{
+public class Host implements Runnable{
     int MAX_NUMBER_FILES = 1024;
     private Thread runner;
     ChunkManager[] chunkManagers;
@@ -64,6 +64,10 @@ public class Host extends Util implements Runnable{
             Util.DebugPrint(DbgSub.HOST, "Caught exception " + e);
         }
 
+        for ( ;; ) {
+
+        }
+
     }
 
 
@@ -72,7 +76,7 @@ public class Host extends Util implements Runnable{
      *   Returns a list of all Files there are currently outstanding download
      *   requests for
      */
-    public String[] GetCurrentDownloads(){
+    public synchronized String[] GetCurrentDownloads(){
         String[] currentDownloads = new String[5];
         currentDownloads[0] = "download1.foo";
         currentDownloads[1] = "download2.foo";
@@ -87,17 +91,17 @@ public class Host extends Util implements Runnable{
      *   Returns the chunk information for all chunks associated with a given
      *   file.  Returns null if the given file is not known.
      */
-    public ChunkInfo[] GetFileChunkInfo(String filename) {
+    public synchronized ChunkInfo[] GetFileChunkInfo(String filename) {
         ChunkInfo[] allChunks = new ChunkInfo[10];
         byte[] hash = new byte[20];
         for (int i = 0; i < 10; i++) {
-            System.arraycopy(IntToByteArray(i), 0, hash, 0, 4);
-            System.arraycopy(IntToByteArray(2*i), 0, hash, 4, 4);
-            System.arraycopy(IntToByteArray(3*i), 0, hash, 8, 4);
-            System.arraycopy(IntToByteArray(4*i), 0, hash, 12, 4);
-            System.arraycopy(IntToByteArray(5*i), 0, hash, 16, 4);
+            System.arraycopy(Util.IntToByteArray(i), 0, hash, 0, 4);
+            System.arraycopy(Util.IntToByteArray(2*i), 0, hash, 4, 4);
+            System.arraycopy(Util.IntToByteArray(3*i), 0, hash, 8, 4);
+            System.arraycopy(Util.IntToByteArray(4*i), 0, hash, 12, 4);
+            System.arraycopy(Util.IntToByteArray(5*i), 0, hash, 16, 4);
             allChunks[i] = new ChunkInfo(i, hash, 0);
-            byte[] IPinBytes = IntToByteArray(0xc0a80101 + i);
+            byte[] IPinBytes = Util.IntToByteArray(0xc0a80101 + i);
             try {
                 allChunks[i].receivedFrom = new Peer(InetAddress.getByAddress(IPinBytes), 1000 + i);
             } catch ( UnknownHostException e ) {
@@ -110,23 +114,56 @@ public class Host extends Util implements Runnable{
     /*
      * Starts a download for the given file
      */
-    public void StartDownload(String filename) {
-
-
+    public synchronized void StartDownload(String filename) {
+        Peer[] peerList = peerManager.GetAllPeersSharingFile(filename);
+        for ( Peer peer : peerList ) {
+            StartDownload(filename, peer);
+        }
     }
 
     /*
      * Starts downloading a file from a specific peer
      */
-    public void StartDownload(String filename, Peer peer) {
-        
+    private synchronized void StartDownload(String filename, Peer peer) {
+        ChunkManager chunkManager = FindChunkManager(filename);
+
+        //If we couldn't find the chunk manager for this file, we can't download it!
+        if ( chunkManager != null ) {
+            RequestingClient requestingClient = new RequestingClient(peer, filename, chunkManager, peerManager);
+            AddRequestingClientToList(requestingClient);
+        }
+    }
+    
+    /*
+     * Returns the ChunkManager for the given file.  If it doesn't exist, returns null
+     */
+    private synchronized ChunkManager FindChunkManager(String filename) {
+        if ( chunkManagers != null ) {
+            for (int i = 0; i < chunkManagers.length; i++) {
+                if ( chunkManagers[i].filename.equals(filename)) {
+                    return chunkManagers[i];
+                }
+            }
+        }
+        return null;
+    }
+
+    private synchronized void AddRequestingClientToList(RequestingClient requestingClient) {
+        if ( requestingClients == null ) {
+            requestingClients = new RequestingClient[1];
+        } else {
+            RequestingClient[] tempList = new RequestingClient[requestingClients.length + 1];
+            System.arraycopy(requestingClients, 0, tempList, 0, requestingClients.length);
+            requestingClients = tempList;
+        }
+        requestingClients[requestingClients.length - 1] = requestingClient;
     }
 
     /*
      * Description:
      *   Searches the tracker for a given file
      */
-    public Peer[] Search(String filename) {
+    public synchronized Peer[] Search(String filename) {
         return null;
     }
 }

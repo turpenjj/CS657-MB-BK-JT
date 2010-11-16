@@ -17,7 +17,7 @@ import java.util.Calendar;
  *
  * @author Matt
  */
-public class RequestingClient extends Util implements Runnable {
+public class RequestingClient implements Runnable {
     int MAX_LISTENERS = 10;
     Thread runner;
     Peer servingHost;
@@ -48,11 +48,11 @@ public class RequestingClient extends Util implements Runnable {
     //This is what gets run when the thread is started
     public void run() {
         Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Started a thread for RequestingClient");
-        long timeForListRequest = GetCurrentTime();
+        long timeForListRequest = Util.GetCurrentTime();
 
         for ( ;; ) {
-            if ( timeForListRequest < GetCurrentTime() ) {
-                timeForListRequest = GetCurrentTime() + LIST_REQUEST_FREQUENCY;
+            if ( timeForListRequest < Util.GetCurrentTime() ) {
+                timeForListRequest = Util.GetCurrentTime() + LIST_REQUEST_FREQUENCY;
                 RequestChunkList();
                 Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "chunkStatus: " + chunkManager.chunkList[1].chunkInfo.status);
             }

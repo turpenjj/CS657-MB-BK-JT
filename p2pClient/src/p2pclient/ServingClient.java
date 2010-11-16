@@ -12,7 +12,7 @@ package p2pclient;
  *
  * @author Matt
  */
-public class ServingClient extends Util implements Runnable {
+public class ServingClient implements Runnable {
     Thread runner;
     int listeningPort;
     private MessageReceive listener;
