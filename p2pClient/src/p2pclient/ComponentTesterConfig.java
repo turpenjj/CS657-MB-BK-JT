@@ -10,10 +10,10 @@ public class ComponentTesterConfig {
     
     public static boolean TEST_LIST_REMOVAL_ALGORITHM = false;
     public static boolean TEST_UTIL_EXTRACT_NULL_TERMINATED_STRING = false;
-    public static boolean TEST_TORRENT = true;
+    public static boolean TEST_TORRENT = false;
     public static boolean TEST_TRACKER_REGISTRATION_IMPORT_EXPORT = false;
     public static boolean TEST_TRACKER_QUERY_IMPORT_EXPORT = false;
-    public static boolean TEST_TRACKER_QUERY_RESPONSE_IMPORT_EXPORT = false;
+    public static boolean TEST_TRACKER_QUERY_RESPONSE_IMPORT_EXPORT = true;
     public static boolean TEST_TRACKER_TORRENT_REGISTRATION = false;
     public static boolean TEST_TRACKER_TORRENT_QUERY = false;
     public static boolean TEST_TRACKER_TORRENT_QUERY_RESPONSE = false;
@@ -41,9 +41,9 @@ public class ComponentTesterConfig {
         false, //    FILE_SENDER,
         true, //    HOST,
         false, //    LIST_OF_FILES,
-        false, //    MESSAGE_BUFFER,
-        false, //    MESSAGE_RECEIVE,
-        false, //    MESAGE_SEND,
+        true, //    MESSAGE_BUFFER,
+        true, //    MESSAGE_RECEIVE,
+        true, //    MESAGE_SEND,
         false, //    PACKET_HEADER,
         false, //    PACKET_TYPE,
         false, //    PEER,
@@ -51,13 +51,14 @@ public class ComponentTesterConfig {
         false, //    REGISTERED_PEER,
         false, //    REQUESTING_CLIENT,
         false, //    SERVING_CLIENT,
-        false, //    TORRENT,
-        false, //    TRACKER,
-        false, //    TRACKER_QUERY,
-        false, //    TRACKER_QUERY_RESPONSE,
-        false, //    TRACKER_REGISTRATION,
+        true, //    TORRENT,
+        true, //    TRACKER,
+        true, //    TRACKER_QUERY,
+        true, //    TRACKER_QUERY_RESPONSE,
+        true, //    TRACKER_QUERY_RESPONSE,
+        true, //    TRACKER_REGISTRATION,
         true, //    TRACKER_TORRENT_QUERY,
-        false, //    TRACKER_TORRENT_REGISTRATION,
+        true, //    TRACKER_TORRENT_REGISTRATION,
         true, //    TRACKER_TORRENT_RESPONSE,
         false, //    UTIL
     };
