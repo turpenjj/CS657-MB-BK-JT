@@ -27,8 +27,9 @@ public class Host implements Runnable{
     public Host(int servingClientListeningPort, String directory) {
         runner = null;
         listeningPort = servingClientListeningPort;
-        shareFolder = directory;
+        shareFolder = directory + "\\";
         chunkManagers = PopulateChunkManagers();
+        peerManager = new PeerManager();
         servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
         trackerIP = null;
     }
@@ -36,8 +37,9 @@ public class Host implements Runnable{
     public Host(int servingClientListeningPort, String directory, String trackerIp) throws UnknownHostException {
         runner = null;
         listeningPort = servingClientListeningPort;
-        shareFolder = directory;
+        shareFolder = directory + "\\";
         chunkManagers = PopulateChunkManagers();
+        peerManager = new PeerManager();
         servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
         trackerIP = InetAddress.getByName(trackerIp);
     }
@@ -87,6 +89,9 @@ public class Host implements Runnable{
      */
     public synchronized String[] GetCurrentDownloads(){
         String[] currentDownloads = null;
+        if ( chunkManagers == null ) {
+            return null;
+        }
         for ( ChunkManager chunkManager : chunkManagers ) {
             if (chunkManager.NeededChunks() != null || chunkManager.DownloadingChunks() != null ) {
                 if ( currentDownloads == null ) {
@@ -103,8 +108,29 @@ public class Host implements Runnable{
     }
 
     public synchronized String[] GetCurrentUploads() {
-        String[] currentUploads = new String[1];
-        currentUploads[0] = "upload1.foo";
+        String[] currentUploads = null;
+        if ( peerManager.peerList == null ) {
+            return null;
+        }
+        for ( Peer peer : peerManager.peerList ) {
+            for ( int i = 0; i < peer.filesWeSent.length; i++ ) {
+                if ( currentUploads == null  ) {
+                    currentUploads = new String[1];
+                } else {
+                    String[] tempList = new String[currentUploads.length + 1];
+                    System.arraycopy(currentUploads, 0, tempList, 0, currentUploads.length);
+                    currentUploads = tempList;
+                }
+                currentUploads[currentUploads.length - 1] = peer.filesWeSent[i] + " {";
+                for ( int j = 0; j < peer.chunksWeSent[i].length; j++ ) {
+                    currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat("" + peer.chunksWeSent[i][j]);
+                    if ( j != peer.chunksWeSent[i].length - 1) {
+                        currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat(", ");
+                    }
+                }
+                currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat(" sent to " + peer.clientIp);
+            }
+        }
         return currentUploads;
     }
 
@@ -209,23 +235,6 @@ public class Host implements Runnable{
                 return null;
             }
         return null;
-    }
-
-    private void AddFilesFromDirectory(String directory) {
-        File dir = new File(directory);
-        FileFilter filter = new RealFileFilter();
-        if (dir != null && dir.exists() && dir.isDirectory()) {
-            File[] files = dir.listFiles(filter);
-            String[] filenames = new String[0];
-            String[] temp;
-
-            for (File file : files) {
-                temp = new String[1 + filenames.length];
-                temp[0] = file.getName();
-                System.arraycopy(filenames, 0, temp, 1, filenames.length);
-                filenames = temp;
-            }
-        }
     }
 
     private synchronized ChunkManager[] PopulateChunkManagers() {

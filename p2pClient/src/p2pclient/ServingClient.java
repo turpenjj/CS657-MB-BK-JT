@@ -75,6 +75,7 @@ public class ServingClient implements Runnable {
                             SendChunkResponse(peer[0], chunkRequest, sessionID[0]);
                             persistentPeer.creditForUs++;
                             persistentPeer.lastServiced = Util.GetCurrentTime();
+                            persistentPeer.SentChunk(chunkRequest.filename, chunkRequest.chunkNumber);
                         } else {
                             Util.DebugPrint(DbgSub.SERVING_CLIENT, "Ignoring request from peer, not enough credit");
                         }

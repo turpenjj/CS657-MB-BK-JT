@@ -19,6 +19,8 @@ public class Peer {
     public int creditForUs; //An approximation of the credit this peer has for us
     public int outstandingRequests; //The number of outstanding chunk requests for this peer
     long lastServiced; //timestamp of the last time we've serviced this peer
+    public String[] filesWeSent;
+    public int[][] chunksWeSent; //[fileIndex][]
 
     Peer(InetAddress ip, int port) {
         clientIp = ip;
@@ -126,5 +128,39 @@ public class Peer {
             return false;
         }
         return true;
+    }
+
+    /*
+     * Updates the list of chunks we've sent to this peer
+     * Useful for viewing by the GUI
+     */
+    public synchronized void SentChunk(String filename, int chunkNumber) {
+        int fileIndex = GetFileIndexIntoSentList(filename);
+        if ( fileIndex == -1 ) {
+            filesWeSent = new String[1];
+            chunksWeSent = new int[1][];
+            chunksWeSent[0] = new int[1];
+            chunksWeSent[0][0] = chunkNumber;
+        } else {
+            int[] tempList = new int[chunksWeSent[fileIndex].length];
+            tempList[0] = chunkNumber;
+            System.arraycopy(chunksWeSent[fileIndex], 0, tempList, 1, chunksWeSent[fileIndex].length);
+            chunksWeSent[fileIndex] = tempList;
+        }
+    }
+
+    /*
+     * Gets the index into fileList[] (and chunkList[][]) for the given file
+     * if the file doesn't exist in the list, -1 is returned
+     */
+    private synchronized int GetFileIndexIntoSentList(String filename) {
+        if ( filesWeSent != null ) {
+            for (int i = 0; i < filesWeSent.length; i++ ) {
+                if ( filesWeSent[i].equals(filename) ) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 }
