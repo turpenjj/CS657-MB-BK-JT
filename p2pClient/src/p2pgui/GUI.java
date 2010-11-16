@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.net.InetAddress;
+import java.util.logging.Level;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
@@ -22,7 +23,7 @@ import p2pclient.Peer;
 import p2pclient.RegisteredPeer;
 import p2pclient.Torrent;
 import p2pclient.Tracker;
-
+import java.util.logging.Logger;
 /**
  *
  * @author Brett
@@ -244,8 +245,10 @@ public class GUI extends javax.swing.JFrame {
 
                 list = new DefaultListModel();
                 DownloadFileList.removeAll();
-                for (int i = 0; i < files.length; i++) {
-                    list.addElement(files[i]);
+                if ( files != null ) {
+                    for (int i = 0; i < files.length; i++) {
+                        list.addElement(files[i]);
+                    }
                 }
                 DownloadFileList.setModel(list);
                 DownloadFileList.setSelectedIndex(index);
@@ -256,8 +259,10 @@ public class GUI extends javax.swing.JFrame {
 
                 list = new DefaultListModel();
                 UploadFileList.removeAll();
-                for (int i = 0; i < files.length; i++) {
-                    list.addElement(files[i]);
+                if ( files != null ) {
+                    for (int i = 0; i < files.length; i++) {
+                        list.addElement(files[i]);
+                    }
                 }
                 UploadFileList.setModel(list);
                 UploadFileList.setSelectedIndex(index);
@@ -767,7 +772,11 @@ public class GUI extends javax.swing.JFrame {
 
         searchFileName = SearchBox.getText();
         
-        hostingPeers = host.Search(searchFileName);
+        try {
+            hostingPeers = host.Search(searchFileName);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         if (hostingPeers != null) {
             QueryResultsHeader.setText("Query results for " + searchFileName);
