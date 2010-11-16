@@ -123,7 +123,7 @@ public class Host implements Runnable{
                     }
                     currentUploads[currentUploads.length - 1] = peer.filesWeSent[i] + " {";
                     for ( int j = 0; j < peer.chunksWeSent[i].length; j++ ) {
-                        currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat("" + peer.chunksWeSent[i][j]);
+                        currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat("" + peer.chunksWeSent[i][j] + "}");
                         if ( j != peer.chunksWeSent[i].length - 1) {
                             currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat(", ");
                         }
