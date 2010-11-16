@@ -17,7 +17,13 @@ public class FileSender extends Util {
     static RequestingClient myReq1;
     public static void main(String args[]) throws Exception
     {
-        Host myHost = new Host(5, "dir");
+        Host myHost;
+        try {
+            myHost = new Host(5, "dir", InetAddress.getLocalHost().getHostAddress());
+        } catch (Exception e) {
+            Util.DebugPrint(DbgSub.FILE_SENDER, "Caught exception " + e);
+            return;
+        }
         myHost.start();
 //        int peerIp = ByteArrayToInt(InetAddress.getByName("192.168.1.100").getAddress());
         Peer myPeer = new Peer(InetAddress.getByName("192.168.1.100"), 9876);

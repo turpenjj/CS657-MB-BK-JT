@@ -11,9 +11,11 @@ package p2pclient;
  */
 public class ChunkInfo {
     public int chunkNumber;
-    byte[] hash = new byte[20];
+    public static int HASH_SIZE = 20;
+    byte[] hash = new byte[ChunkInfo.HASH_SIZE];
     public volatile int status; //0 = missing, 1 = downloading, 2 = available
     public volatile Peer receivedFrom;
+
 
     ChunkInfo(int chNumber, byte[]chunkHash, int stat) {
         chunkNumber = chNumber;

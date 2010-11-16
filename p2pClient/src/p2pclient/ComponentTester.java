@@ -68,6 +68,29 @@ public class ComponentTester {
         if (ComponentTesterConfig.TEST_TRACKER_WITH_REAL_SOCKETS) {
             TestTrackerWithRealSockets();
         }
+
+        if (ComponentTesterConfig.TEST_CHUNK_MANAGER_FILE_WRITE) {
+            TestChunkManagerFileWrite();
+        }
+    }
+
+    private static void TestChunkManagerFileWrite() throws Exception {
+        Torrent torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile.txt");
+        ChunkManager chunkManager = new ChunkManager(torrent, ComponentTesterConfig.TEST_FILE_PATH_ROOT + File.separator + "OutputFiles");
+        Peer samplePeer = new Peer(InetAddress.getLocalHost(), Util.GetRandomHighPort(new Random()));
+        byte[] data = new byte[Torrent.CHUNK_SIZE];
+
+        for (ChunkInfo chunkInfo : torrent.chunks) {
+            System.arraycopy(torrent.fileDataTemp, chunkInfo.chunkNumber * Torrent.CHUNK_SIZE, data, 0, data.length);
+            chunkManager.UpdateChunk(chunkInfo.chunkNumber, data, samplePeer);
+        }
+
+        byte[] writtenData = Util.ReadFileData(ComponentTesterConfig.TEST_FILE_PATH_ROOT + File.separator + "OutputFiles", torrent.filename);
+        if (Arrays.equals(writtenData, torrent.fileDataTemp)) {
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Chunk manager wrote completed file");
+        } else {
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Chunk manager failed to write file properly");
+        }
     }
 
     private static void TestSendReceiveLargeMessages() throws Exception {
@@ -817,7 +840,7 @@ public class ComponentTester {
 
         //Initialize chunkManagers;
         for ( int i = 0; i < 5; i++) {
-            chunkManagers[i] = new ChunkManager("Filename" + i);
+            chunkManagers[i] = new ChunkManager("Filename" + i, ComponentTesterConfig.TEST_FILE_PATH_ROOT);
             chunkManagers[i].chunkList = new FileChunk[2];
             byte[] tempHash = {(byte)i,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
             chunkManagers[i].chunkList[0] = new FileChunk(0, tempHash, 0, null);
@@ -831,7 +854,7 @@ public class ComponentTester {
         }
         //Initialize Requestor chunkManagers
         for ( int i = 0; i < 5; i++) {
-            reqchunkManagers[i] = new ChunkManager("Filename" + i);
+            reqchunkManagers[i] = new ChunkManager("Filename" + i, ComponentTesterConfig.TEST_FILE_PATH_ROOT);
             reqchunkManagers[i].chunkList = new FileChunk[2];
             byte[] tempHash = {(byte)i,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
             reqchunkManagers[i].chunkList[0] = new FileChunk(0, tempHash, 0, null);

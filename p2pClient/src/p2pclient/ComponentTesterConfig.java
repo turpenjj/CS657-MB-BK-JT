@@ -25,15 +25,16 @@ public class ComponentTesterConfig {
     public static boolean TEST_SERVING_CLIENT = false;
     public static boolean TEST_HOST = false;
 
-    public static boolean TEST_TRACKER_WITH_REAL_SOCKETS = true;
+    public static boolean TEST_TRACKER_WITH_REAL_SOCKETS = false;
     public static boolean TEST_SEND_RECEIVE_LARGE_MESSAGES = false;
+    public static boolean TEST_CHUNK_MANAGER_FILE_WRITE = true;
 
     public static boolean[] DebugLevels = {
         true, //    ALL,
         false, //    CHUNK_INFO,
         false, //    CHUNK_LIST_REQUEST,
         false, //    CHUNK_LIST_RESPONSE,
-        false, //    CHUNK_MANAGER,
+        true, //    CHUNK_MANAGER,
         false, //    CHUNK_REQUEST,
         false, //    CHUNK_RESPONSE,
         true, //    COMPONENT_TESTER,
@@ -47,11 +48,11 @@ public class ComponentTesterConfig {
         false, //    MESAGE_SEND,
         false, //    PACKET_HEADER,
         false, //    PACKET_TYPE,
-        true, //    PEER,
+        false, //    PEER,
         false, //    PEER_MANAGER,
         false, //    REGISTERED_PEER,
-        true, //    REQUESTING_CLIENT,
-        true, //    SERVING_CLIENT,
+        false, //    REQUESTING_CLIENT,
+        false, //    SERVING_CLIENT,
         false, //    TORRENT,
         false, //    TRACKER,
         false, //    TRACKER_QUERY,

@@ -53,14 +53,6 @@ public class FileChunk {
         }
     }
 
-    /*
-     * Description:
-     *   Returns the byte data for this chunk
-     */
-    public byte[] GetChunkData() {
-        return null;
-    }
-
     public void SetChunk(byte[] data, int length) {
         chunk = new byte[length];
         System.arraycopy(data, 0, chunk, 0, length);

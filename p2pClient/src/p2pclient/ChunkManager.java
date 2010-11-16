@@ -5,6 +5,8 @@
 
 package p2pclient;
 
+import java.io.*;
+
 /**
  * Description:
  *  This class is used to manage the chunks that make up a file.  It acts as the gateway between the File and the GUI, the Receiving
@@ -16,6 +18,7 @@ public class ChunkManager {
     public String filename;
     public boolean downloadStarted;
     FileChunk[] chunkList;
+    public String completeFilePath;
 
     /*
      * Description:
@@ -28,9 +31,25 @@ public class ChunkManager {
      *   ChunkManager will create a new TrackerRequest object to get the torrent
      *   from the tracker and create the chunkList based on the torrent.
      */
-    ChunkManager(String newFile) {
-        filename = newFile;
-        downloadStarted = false;
+    ChunkManager(String filename, String completedFilePath) {
+        this.filename = filename;
+        this.downloadStarted = false;
+        this.completeFilePath = completedFilePath;
+    }
+
+    ChunkManager(Torrent torrent, String completedFilePath) {
+        this.filename = torrent.filename;
+        this.downloadStarted = false;
+        this.completeFilePath = completedFilePath;
+        this.chunkList = new FileChunk[torrent.numChunks];
+        int chunkNum;
+        byte[] hash = new byte[ChunkInfo.HASH_SIZE];
+
+        for (int i = 0; i < torrent.numChunks; i++) {
+            chunkNum = torrent.chunks[i].chunkNumber;
+            System.arraycopy(torrent.chunks[i].hash, 0, hash, 0, hash.length);
+            this.chunkList[chunkNum] = new FileChunk(chunkNum, hash, 0, null);
+        }
     }
 
     public synchronized ChunkManager FindChunkManager(String filename) {
@@ -99,8 +118,29 @@ public class ChunkManager {
     public synchronized void UpdateChunk(int chunkNumber, byte[] chunkData, Peer receivedFrom) {
         if ( chunkNumber < chunkList.length ) {
             chunkList[chunkNumber].UpdateChunk(chunkData, receivedFrom);
-            chunkList[chunkNumber].chunk = chunkData;
-            chunkList[chunkNumber].chunkInfo.status = 2;
+            chunkList[chunkNumber].chunk = chunkData.clone();
+            //System.arraycopy(chunkData, 0, chunkList[chunkNumber].chunk, 0, chunkData.length);
+        }
+
+        // figure out if file is completed and write it to disk
+        int completedCount = 0;
+        int totalSize = 0;
+        if (this.chunkList != null) {
+            for (FileChunk fileChunk : this.chunkList) {
+                if (fileChunk.chunkInfo != null && fileChunk.chunkInfo.status == 2 && fileChunk.chunk != null && fileChunk.chunk.length != 0) {
+                    completedCount++;
+                    totalSize += fileChunk.chunk.length;
+                }
+            }
+
+            if (completedCount == this.chunkList.length) {
+                byte[] fileData = new byte[totalSize];
+                for (FileChunk fileChunk : this.chunkList) {
+                    System.arraycopy(fileChunk.chunk, 0, fileData, fileChunk.chunkInfo.chunkNumber * Torrent.CHUNK_SIZE, fileChunk.chunk.length);
+                }
+
+                Util.WriteFileData(this.completeFilePath, this.filename, fileData);
+            }
         }
     }
 

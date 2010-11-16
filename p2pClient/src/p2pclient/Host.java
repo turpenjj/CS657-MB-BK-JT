@@ -183,7 +183,7 @@ public class Host implements Runnable{
                 TrackerTorrentResponse torrentResponse = new TrackerTorrentResponse();
                 torrentResponse.ImportMessagePayload(receivedMessage);
                 if ( torrentResponse.torrent.numChunks > 0 ) {
-                    chunkManager = CreateChunkManagerFromTorrent(null, null, torrentResponse.torrent);
+                    chunkManager = new ChunkManager(torrentResponse.torrent, ComponentTesterConfig.TEST_FILE_PATH_ROOT);
                     AddChunkManager(chunkManager);
                     Util.DebugPrint(DbgSub.HOST, "Added a chunk manager");
                 }
@@ -416,7 +416,7 @@ public class Host implements Runnable{
                 byteBuffer = new byte[torrent.CHUNK_SIZE];
             }
 
-            ChunkManager chunkManager = new ChunkManager(torrent.filename);
+            ChunkManager chunkManager = new ChunkManager(torrent.filename, ComponentTesterConfig.TEST_FILE_PATH_ROOT);
             chunkManager.chunkList = new FileChunk[torrent.numChunks];
             for ( int i = 0; i < torrent.numChunks; i++ ) {
                 chunkManager.chunkList[i] = new FileChunk(torrent.chunks[i].chunkNumber, torrent.chunks[i].hash, torrent.chunks[i].status, null);
@@ -426,8 +426,6 @@ public class Host implements Runnable{
                     bytesRead = fileInputStream.read(byteBuffer);
                     chunkManager.chunkList[i].chunk = new byte[bytesRead];
                     System.arraycopy(byteBuffer, 0, chunkManager.chunkList[i].chunk, 0, bytesRead);
-                } else {
-                    chunkManager.chunkList[i].chunkInfo.status = 0;
                 }
             }
             Util.DebugPrint(DbgSub.HOST, "Created a chunk manager based off torrent: " + chunkManager + " filename " + chunkManager.filename);
