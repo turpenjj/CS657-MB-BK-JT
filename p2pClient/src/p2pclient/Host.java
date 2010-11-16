@@ -40,7 +40,7 @@ public class Host extends Util implements Runnable{
     }
 
     public void run() {
-        System.out.println("Startng a new host, listening for connections on port " + listeningPort);
+        Util.DebugPrint(DbgSub.HOST, "Startng a new host, listening for connections on port " + listeningPort);
         ChunkManager[] temp = new ChunkManager[3];
         System.arraycopy(chunkManagers, 0, temp, 0, 2);
         chunkManagers = temp;
@@ -48,6 +48,22 @@ public class Host extends Util implements Runnable{
         servingClient.UpdateChunkManagers(chunkManagers);
         //Start our listener so we can serve out file chunks upon request
         servingClient.start();
+        MessageSend messageSender = new MessageSend();
+
+        try {
+            TrackerRegistration trackerRegistration = new TrackerRegistration(listeningPort);
+
+            trackerRegistration.AddFilesFromDirectory(shareFolder);
+
+            byte[] registrationMessageData = trackerRegistration.ExportMessagePayload();
+
+            Peer tracker = new Peer(InetAddress.getByName("192.168.100.202"), Tracker.TRACKER_LISTENING_PORT);
+
+            messageSender.SendCommunication(tracker, PacketType.TRACKER_REGISTRATION, Tracker.TRACKER_LISTENING_PORT, registrationMessageData);
+        } catch (Exception e) {
+            Util.DebugPrint(DbgSub.HOST, "Caught exception " + e);
+        }
+
     }
 
 
@@ -85,7 +101,7 @@ public class Host extends Util implements Runnable{
             try {
                 allChunks[i].receivedFrom = new Peer(InetAddress.getByAddress(IPinBytes), 1000 + i);
             } catch ( UnknownHostException e ) {
-                System.out.println("Unknown host: " + e);
+                Util.DebugPrint(DbgSub.HOST, "Unknown host: " + e);
             }
         }
         return allChunks;
