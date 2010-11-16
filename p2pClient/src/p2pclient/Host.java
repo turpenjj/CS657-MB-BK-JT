@@ -7,6 +7,7 @@ package p2pclient;
 
 import java.net.*;
 import java.io.*;
+import java.util.Random;
 
 /**
  *
@@ -21,6 +22,7 @@ public class Host implements Runnable{
     ServingClient servingClient;
     int listeningPort;
     String shareFolder;
+    InetAddress trackerIP;
 
     public Host(int servingClientListeningPort, String directory) {
         runner = null;
@@ -28,7 +30,16 @@ public class Host implements Runnable{
         shareFolder = directory;
         chunkManagers = PopulateChunkManagers();
         servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
+        trackerIP = null;
+    }
 
+    public Host(int servingClientListeningPort, String directory, String trackerIp) throws UnknownHostException {
+        runner = null;
+        listeningPort = servingClientListeningPort;
+        shareFolder = directory;
+        chunkManagers = PopulateChunkManagers();
+        servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
+        trackerIP = InetAddress.getByName(trackerIp);
     }
 
     public void start() {
@@ -103,23 +114,12 @@ public class Host implements Runnable{
      *   file.  Returns null if the given file is not known.
      */
     public synchronized ChunkInfo[] GetFileChunkInfo(String filename) {
-        ChunkInfo[] allChunks = new ChunkInfo[10];
-        byte[] hash = new byte[20];
-        for (int i = 0; i < 10; i++) {
-            System.arraycopy(Util.IntToByteArray(i), 0, hash, 0, 4);
-            System.arraycopy(Util.IntToByteArray(2*i), 0, hash, 4, 4);
-            System.arraycopy(Util.IntToByteArray(3*i), 0, hash, 8, 4);
-            System.arraycopy(Util.IntToByteArray(4*i), 0, hash, 12, 4);
-            System.arraycopy(Util.IntToByteArray(5*i), 0, hash, 16, 4);
-            allChunks[i] = new ChunkInfo(i, hash, 0);
-            byte[] IPinBytes = Util.IntToByteArray(0xc0a80101 + i);
-            try {
-                allChunks[i].receivedFrom = new Peer(InetAddress.getByAddress(IPinBytes), 1000 + i);
-            } catch ( UnknownHostException e ) {
-                Util.DebugPrint(DbgSub.HOST, "Unknown host: " + e);
-            }
+        ChunkManager chunkManager = FindChunkManager(filename);
+
+        if ( chunkManager != null ) {
+            return chunkManager.GetChunkInfo();
         }
-        return allChunks;
+        return null;
     }
 
     /*
@@ -174,8 +174,58 @@ public class Host implements Runnable{
      * Description:
      *   Searches the tracker for a given file
      */
-    public synchronized Peer[] Search(String filename) {
+    public synchronized Peer[] Search(String filename) throws InterruptedException {
+        MessageSend messageSender = new MessageSend();
+        PacketType[] acceptedPacketType = {PacketType.TRACKER_QUERY_RESPONSE};
+        MessageReceive queryMessageReceive = new MessageReceive(this.listeningPort, acceptedPacketType, false);
+        queryMessageReceive.start();
+        byte[] receivedMessageData;
+        Peer[] receivedPeer = new Peer[1];
+        int[] receivedSessionId = new int[1];
+        PacketType[] receivedPacketType = new PacketType[1];
+        Random random = new Random();
+        int sessionId = random.nextInt();
+        TrackerQueryResponse trackerQueryResponse;
+        Peer trackerPeer = new Peer(trackerIP, Tracker.TRACKER_LISTENING_PORT);
+
+        TrackerQuery trackerQuery = new TrackerQuery(filename, this.listeningPort);
+        messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_QUERY, Tracker.TRACKER_LISTENING_PORT, trackerQuery.ExportQuery());
+
+        Thread.sleep(1000);
+
+        receivedMessageData = queryMessageReceive.GetMessage(sessionId, acceptedPacketType, receivedPeer, receivedPacketType, receivedSessionId);
+            if (receivedMessageData != null) {
+                trackerQueryResponse = new TrackerQueryResponse();
+                trackerQueryResponse.ImportResponse(receivedMessageData);
+
+                if ( trackerQueryResponse.peerList != null ) {
+                    queryMessageReceive.Stop();
+                    return trackerQueryResponse.peerList;
+                } else {
+                    queryMessageReceive.Stop();
+                }
+            } else {
+                queryMessageReceive.Stop();
+                return null;
+            }
         return null;
+    }
+
+    private void AddFilesFromDirectory(String directory) {
+        File dir = new File(directory);
+        FileFilter filter = new RealFileFilter();
+        if (dir != null && dir.exists() && dir.isDirectory()) {
+            File[] files = dir.listFiles(filter);
+            String[] filenames = new String[0];
+            String[] temp;
+
+            for (File file : files) {
+                temp = new String[1 + filenames.length];
+                temp[0] = file.getName();
+                System.arraycopy(filenames, 0, temp, 1, filenames.length);
+                filenames = temp;
+            }
+        }
     }
 
     private synchronized ChunkManager[] PopulateChunkManagers() {
