@@ -95,7 +95,7 @@ public class FileChunk {
             md.update(toHash, 0, toHash.length);
             chunkInfo.hash = md.digest();
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Trouble, no SHA1 algorithm");
+            Util.DebugPrint(DbgSub.FILE_CHUNK, "Trouble, no SHA1 algorithm");
         }
         return chunkInfo.hash;
     }

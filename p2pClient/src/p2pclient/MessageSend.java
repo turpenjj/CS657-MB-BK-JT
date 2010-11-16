@@ -23,10 +23,10 @@ public class MessageSend {
         try {
             DatagramSocket sendingSocket = new DatagramSocket();
             PacketHeader packetHeader = new PacketHeader(sessionID, packetType, sendData.length, 0);
-            System.out.println("Sending out packet with sessionID " + sessionID);
+            Util.DebugPrint(DbgSub.MESSAGE_SEND, "Sending out packet with sessionID " + sessionID);
             SendPacket(sendingSocket, peer, packetHeader, sendData);
         } catch ( SocketException e ) {
-            System.out.println("SendCommunication Socket error" + e);
+            Util.DebugPrint(DbgSub.MESSAGE_SEND, "SendCommunication Socket error" + e);
         }
     }
 
@@ -43,9 +43,9 @@ public class MessageSend {
             InetAddress ipAddress = peer.clientIp;
             DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, ipAddress, peer.listeningPort);
             sendingSocket.send(packet);
-            System.out.println("Sent out packet to " + ipAddress + " on port " + peer.listeningPort);;
+            Util.DebugPrint(DbgSub.MESSAGE_SEND, "Sent out packet to " + ipAddress + " on port " + peer.listeningPort);;
         } catch ( IOException e) {
-            System.out.println("SocketSend encountered an error: " + e);
+            Util.DebugPrint(DbgSub.MESSAGE_SEND, "SocketSend encountered an error: " + e);
         }
     }
 

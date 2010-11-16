@@ -44,7 +44,7 @@ public class MessageReceive extends Util implements Runnable {
                 this.permanent = true;
             }
         } catch ( IOException e ) {
-            System.out.println("MessageReceive: Receieved socket error: " + e);
+             Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Receieved socket error: " + e);
         }
     }
 
@@ -54,7 +54,7 @@ public class MessageReceive extends Util implements Runnable {
         while ( listeningPort < MAX_PORT_NUMBER )  {
             try {
                 this.listeningSocket = new DatagramSocket(this.listeningPort);
-                System.out.println("MessageReceive: Opened a socket on port " + this.listeningPort);
+                Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Opened a socket on port " + this.listeningPort);
                 this.listeningSocket.setSoTimeout(this.SOCKET_TIMEOUT_MS);
                 this.permanent = permanent;
                 break;
@@ -78,7 +78,7 @@ public class MessageReceive extends Util implements Runnable {
     }
 
     public void run() {
-        System.out.println("MessageReceive: Started a Message Receive thread " + this.listeningSocket.getLocalPort());
+        Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Started a Message Receive thread " + this.listeningSocket.getLocalPort());
 
         /* Outline:
          * Call ReceiveCommunication in a loop. Don't worry about timeouts. When a full message is received, call ProcessQuery().
@@ -91,7 +91,7 @@ public class MessageReceive extends Util implements Runnable {
             MessageBuffer messageBuff;
 
             if ( ReceivePacket(peer, packetHeader, packetInData) != -1 ) {
-                System.out.println("MessageReceive: received a packet");
+                Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: received a packet");
                 receivedPacketData = packetInData[0];
                 boolean accept = false;
                 for (PacketType type : this.acceptedPacketTypes) {
@@ -101,7 +101,7 @@ public class MessageReceive extends Util implements Runnable {
                     }
                 }
                 if ( accept ) {
-                    System.out.println("MessageReceive: Accepting this packet");
+                    Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Accepting this packet");
                     if ( (messageBuff = FindMessage(packetHeader[0].sessionID)) != null ) {
                         messageBuff.AddDataToMessage(packetHeader[0], receivedPacketData);
                     } else {
@@ -111,7 +111,7 @@ public class MessageReceive extends Util implements Runnable {
                     }
                 } else {
                     // TODO: discard received packet data
-                    System.out.println("MessageReceive: Rejecting this packet");
+                    Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Rejecting this packet");
                 }
             }
         }
@@ -157,7 +157,7 @@ public class MessageReceive extends Util implements Runnable {
                 MessageBuffer loopMessage = this.messageBuffers[i];
                 if ( (messageData = loopMessage.IsMessageComplete(peer, packetType, sessionID)) != null ) {
                     for (PacketType type : this.acceptedPacketTypes) {
-                        System.out.println("MessageReceive: Checking " + type + " vs " + packetType[0]);
+                        Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "MessageReceive: Checking " + type + " vs " + packetType[0]);
                         if (packetType != null && packetType[0] == type) {
                             // TODO: remove message from this.messageBuffers
                             RemoveMessageFromList(loopMessage);

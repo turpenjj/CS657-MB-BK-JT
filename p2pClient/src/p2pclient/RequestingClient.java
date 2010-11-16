@@ -47,24 +47,24 @@ public class RequestingClient extends Util implements Runnable {
 
     //This is what gets run when the thread is started
     public void run() {
-        System.out.println("RequestingClient: Started a thread for RequestingClient");
+        Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Started a thread for RequestingClient");
         long timeForListRequest = GetCurrentTime();
 
         for ( ;; ) {
             if ( timeForListRequest < GetCurrentTime() ) {
                 timeForListRequest = GetCurrentTime() + LIST_REQUEST_FREQUENCY;
                 RequestChunkList();
-                System.out.println("chunkStatus: " + chunkManager.chunkList[1].chunkInfo.status);
+                Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "chunkStatus: " + chunkManager.chunkList[1].chunkInfo.status);
             }
             //TODO: Determine which chunk(s) to spin up requests for
             ChunkInfo[] missingChunks = chunkManager.NeededChunks();
             for (int i = 0; i < missingChunks.length; i++) {
                 if ( servingHost.HasChunk(filename, i) ) {
                     if ( servingHost.ShouldRequest() ) {
-                        System.out.println("RequestingClient: Requesting chunk " + i + " from " + servingHost.clientIp);
+                        Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Requesting chunk " + i + " from " + servingHost.clientIp);
                         RequestChunk(i);
                     } else {
-                        System.out.println("RequestingClient: Choosing not to request a chunk from " + servingHost.clientIp);
+                        Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Choosing not to request a chunk from " + servingHost.clientIp);
                     }
                 }
             }
@@ -77,9 +77,9 @@ public class RequestingClient extends Util implements Runnable {
                         case 0: //still waiting
                             break;
                         case 1: //request complete
-                            System.out.println("RequestingClient: Completed a Request");
-System.out.println("MissingChunks: " + chunkManager.NeededChunks().length);
-System.out.println("Chunk[1] = " + chunkManager.chunkList[1].chunk);
+                            Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Completed a Request");
+Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "MissingChunks: " + chunkManager.NeededChunks().length);
+Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "Chunk[1] = " + chunkManager.chunkList[1].chunk);
                             switch (packetType[0]) {
                                 case CHUNK_LIST_RESPONSE:
                                     ProcessChunkListResponse(data[0]);
@@ -92,17 +92,17 @@ System.out.println("Chunk[1] = " + chunkManager.chunkList[1].chunk);
                             RemoveListenerFromList(listenerList[i]);
                             break;
                         case 2: //timeout
-                            System.out.println("11111111111111111Request timed out: " + listenerList[i].chunkNumber );
+                            Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "11111111111111111Request timed out: " + listenerList[i].chunkNumber );
                             if ( listenerList[i].requestType[0] == PacketType.CHUNK_RESPONSE ) {
                                 TimeoutChunkRequest(listenerList[i].chunkNumber);
-                                System.out.println("AM I A MORON");
+                                Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "AM I A MORON");
 //                                chunkManager.UpdateChunkStatus(listenerList[i].chunkNumber, 0);
 //                                Thread.yield();
 //                                chunkManager.chunkList[listenerList[i].chunkNumber].chunkInfo.status = 0;
                                 servingHost.outstandingRequests--;
                             }
                             RemoveListenerFromList(listenerList[i]);
-                            System.out.println("!!!!!!!!!!!! missing chunks: " + chunkManager.NeededChunks().length);
+                            Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "!!!!!!!!!!!! missing chunks: " + chunkManager.NeededChunks().length);
                             break;
                     }
                     Thread.yield();
@@ -177,7 +177,7 @@ System.out.println("Chunk[1] = " + chunkManager.chunkList[1].chunk);
         Listener newListener = new Listener(PacketType.CHUNK_LIST_RESPONSE, nextSessionID++, -1, DEFAULT_LISTEN_TIMEOUT);
         AddListenerToList(newListener);
 
-        System.out.println("RequestingClient: Sending out a new chunk list request for " + filename);
+        Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Sending out a new chunk list request for " + filename);
         ChunkListRequest chunkListRequest = new ChunkListRequest(filename, newListener.listener.listeningPort);
         MessageSend sender = new MessageSend();
         sender.SendCommunication(servingHost, PacketType.CHUNK_LIST_REQUEST, newListener.sessionID, chunkListRequest.ExportMessagePayload());
@@ -192,7 +192,7 @@ System.out.println("Chunk[1] = " + chunkManager.chunkList[1].chunk);
         AddListenerToList(newListener);
 
         servingHost.outstandingRequests++;
-        System.out.println("RequestingClient: Sending out a new chunk request for " + filename + "-" + chunkNumber);
+        Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Sending out a new chunk request for " + filename + "-" + chunkNumber);
         ChunkRequest chunkRequest = new ChunkRequest(filename, chunkNumber, newListener.listener.listeningPort);
         chunkManager.chunkList[chunkNumber].chunkInfo.status = 1; //downloading
         MessageSend sender = new MessageSend();
@@ -217,7 +217,7 @@ System.out.println("Chunk[1] = " + chunkManager.chunkList[1].chunk);
             ChunkListResponse chunkListResponse = new ChunkListResponse();
             chunkListResponse.ImportMessagePayload(rawData);
 
-            System.out.println("RequestingClient: Received a chunk list for " + chunkListResponse.filename);
+            Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Received a chunk list for " + chunkListResponse.filename);
             //TODO: Update peer in Peer Manager
             peerManager.UpdatePeer(servingHost);
             servingHost.UpdateChunkList(filename, chunkListResponse.chunkList);
@@ -233,7 +233,7 @@ System.out.println("Chunk[1] = " + chunkManager.chunkList[1].chunk);
             chunkNumber = chunkResponse.chunkNumber;
             chunkData = chunkResponse.chunkData;
 
-            System.out.println("ReceivingClient: received chunk " + chunkNumber + " for " + filename);
+            Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "ReceivingClient: received chunk " + chunkNumber + " for " + filename);
             chunkManager.UpdateChunk(chunkNumber, chunkData, servingHost);
             servingHost.creditForThem++;
         }        
@@ -258,16 +258,16 @@ class Listener {
         this.timeout = Util.GetCurrentTime() + timeoutValue;
         this.status = 0;
         this.listener.start();
-        System.out.println("RequestingClient: SessionID: " + sessionID);
+        Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: SessionID: " + sessionID);
     }
 
     public int GetMessage(PacketType[] receivedPacketType, byte[][] packetData) {
         if ( (packetData[0] = listener.GetMessage(sessionID, requestType, null, receivedPacketType, null)) != null ) {
-            System.out.println("RequestingClient: Received a message!");
+            Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Received a message!");
             listener.Stop();
             status = 1;
         } else if ( Util.GetCurrentTime() > timeout ) {
-            System.out.println("RequestingClient: requesting Listener timed out");
+            Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: requesting Listener timed out");
             //TODO: Implement stop() method for MessageReceive
             listener.Stop();
             status = 2;

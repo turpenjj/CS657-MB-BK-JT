@@ -39,7 +39,7 @@ public class ServingClient extends Util implements Runnable {
     }
 
     public void run() {
-        System.out.println("ServingClient: listening on port " + listeningPort);
+        Util.DebugPrint(DbgSub.SERVING_CLIENT, "ServingClient: listening on port " + listeningPort);
 
         //Spin up a thread for listening on the socket.
         listener = new MessageReceive(listeningPort, acceptedPackets, true);
@@ -53,14 +53,14 @@ public class ServingClient extends Util implements Runnable {
             Peer[] peer = new Peer[1];
             byte[] messageData = null;
             if ( (messageData = listener.GetMessage(0, acceptedPackets, peer, packetType, sessionID)) != null ) {
-                System.out.println("ServingClient: Got a message from " + peer[0].clientIp);
+                Util.DebugPrint(DbgSub.SERVING_CLIENT, "ServingClient: Got a message from " + peer[0].clientIp);
                 Peer persistentPeer = peerManager.UpdatePeer(peer[0]);
                 switch (packetType[0]) {
                     case CHUNK_LIST_REQUEST:
                         ChunkListRequest chunkListRequest = new ChunkListRequest();
                         chunkListRequest.ImportMessagePayload(messageData);
                         peer[0].listeningPort = chunkListRequest.receivingPort;
-                        System.out.println("ServingClient: Chunk List requested for file " + chunkListRequest.filename);
+                        Util.DebugPrint(DbgSub.SERVING_CLIENT, "ServingClient: Chunk List requested for file " + chunkListRequest.filename);
                         SendChunkListResponse(peer[0], chunkListRequest, sessionID[0]);
                         //Optimization: Add the requested file to the list of files the peer has, since it is likely
                         // that peer is downloading the file from other peers as well
@@ -70,13 +70,13 @@ public class ServingClient extends Util implements Runnable {
                         if ( peerManager.ShouldTradeWith(peer[0]) ) {
                             ChunkRequest chunkRequest = new ChunkRequest();
                             chunkRequest.ImportMessagePayload(messageData);
-                            System.out.println("ServingClient: Responding to chunk request for file " + chunkRequest.filename + "(" + chunkRequest.chunkNumber + ")");
+                            Util.DebugPrint(DbgSub.SERVING_CLIENT, "ServingClient: Responding to chunk request for file " + chunkRequest.filename + "(" + chunkRequest.chunkNumber + ")");
                             peer[0].listeningPort = chunkRequest.listeningPort;
                             SendChunkResponse(peer[0], chunkRequest, sessionID[0]);
                             persistentPeer.creditForUs++;
                             persistentPeer.lastServiced = Util.GetCurrentTime();
                         } else {
-                            System.out.println("Ignoring request from peer, not enough credit");
+                            Util.DebugPrint(DbgSub.SERVING_CLIENT, "Ignoring request from peer, not enough credit");
                         }
                         break;
                 }
@@ -91,12 +91,12 @@ public class ServingClient extends Util implements Runnable {
             chunkManager = chunkManagers[chunkManagerIndex++].FindChunkManager(chunkListRequest.filename);
         }
         if ( chunkManager == null ) {
-            System.out.println("ServingClient: Failed to find an appropriate chunk manager");
+            Util.DebugPrint(DbgSub.SERVING_CLIENT, "ServingClient: Failed to find an appropriate chunk manager");
             return;
         }
         ChunkListResponse chunkListResponse = new ChunkListResponse(chunkManager.filename, chunkManager.AvailableChunks());
         MessageSend sender = new MessageSend();
-        System.out.println("ServingClient: sending out chunk list response: " + Util.ConvertToHex(chunkListResponse.ExportMessagePayload()));
+        Util.DebugPrint(DbgSub.SERVING_CLIENT, "ServingClient: sending out chunk list response: " + Util.ConvertToHex(chunkListResponse.ExportMessagePayload()));
         sender.SendCommunication(peer, PacketType.CHUNK_LIST_RESPONSE, sessionID, chunkListResponse.ExportMessagePayload());
     }
 

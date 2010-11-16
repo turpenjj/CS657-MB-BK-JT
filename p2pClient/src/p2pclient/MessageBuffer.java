@@ -45,8 +45,8 @@ public class MessageBuffer {
     public byte[] IsMessageComplete(Peer[] peer, PacketType[] packetType, int[] sessionID) {
         Thread.yield();
         if ( this.totalBytesReceived == this.packetHeader.totalSize ) {
-            System.out.println("This message is complete! " + this.packetHeader.packetType + " " + this.packetHeader.sessionID + " " + this.totalBytesReceived);
-            System.out.println(": " + Util.ConvertToHex(this.messageData));
+            Util.DebugPrint(DbgSub.MESSAGE_BUFFER, "This message is complete! " + this.packetHeader.packetType + " " + this.packetHeader.sessionID + " " + this.totalBytesReceived);
+            Util.DebugPrint(DbgSub.MESSAGE_BUFFER, ": " + Util.ConvertToHex(this.messageData));
             if ( peer != null ) {
                 peer[0] = this.peer;
             }
