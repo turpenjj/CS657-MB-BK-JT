@@ -140,7 +140,7 @@ public class TrackerTorrentRegistration {
         ChunkInfo chunkInfo;
 
         if (blob.length < this.MESSAGE_BASE_SIZE) {
-            System.out.println("Message not large enough");
+            Util.DebugPrint(DbgSub.TRACKER_TORRENT_REGISTRATION, "Message not large enough");
 
             return;
         }
@@ -153,7 +153,7 @@ public class TrackerTorrentRegistration {
         currentIndex += 4;
 
         if (numberOfChunks * this.MESSAGE_CHUNK_DATA_SIZE != blob.length - currentIndex) {
-            System.out.println("Mismatch between number of chunks and message data remaining");
+            Util.DebugPrint(DbgSub.TRACKER_TORRENT_REGISTRATION, "Mismatch between number of chunks and message data remaining");
 
             return;
         }
@@ -174,6 +174,13 @@ public class TrackerTorrentRegistration {
 
     private Torrent[] AddToTorrentList(Torrent[] list, Torrent torrent) {
         Torrent[] temp;
+
+        for (Torrent tempTorrent : list) {
+            // don't add duplicates
+            if (tempTorrent.filename.equalsIgnoreCase(torrent.filename)) {
+                return list;
+            }
+        }
 
         if (list == null || list.length == 0 || list[0] == null) {
             temp = new Torrent[1];

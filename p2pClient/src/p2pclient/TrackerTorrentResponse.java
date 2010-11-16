@@ -19,6 +19,10 @@ package p2pclient;
  *
  * @note The Tracker Torrent Response message data format is the same as the
  * Tracker Torrent Registration message data format.
+ *
+ * @note When the tracker doesn't find a torrent matching the search criteria,
+ * it returns an empty torrent (filename is an empty string, file size is 0,
+ * number of chunks is 0);
  * 
  * @author Jeremy
  */

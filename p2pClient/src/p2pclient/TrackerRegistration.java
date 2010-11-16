@@ -2,6 +2,7 @@ package p2pclient;
 
 import java.io.*;
 import java.net.*;
+import java.io.FileFilter;
 
 /**
  * This handles tracking of all registered peers and the list of files they
@@ -18,15 +19,15 @@ import java.net.*;
  * @author Jeremy
  */
 public class TrackerRegistration {
+    // TODO: switch these back to private when we are done using it for testing
     // For a peer, this will only have one element. For the Tracker it will
     // likely have many.
-    private RegisteredPeer[] registeredPeers = {null};
+    public RegisteredPeer[] registeredPeers = {null};
     // Used for peer only, not tracker
-    // TODO: switch this back to private when we are done using it for testing
     public Peer peer;
     private int BASE_MESSAGE_SIZE = 4; // listeningPort (4)
     // TODO: switch this back to private when we are done using it for testing
-    public long PEER_TIMEOUT_MSEC = 10000; //5 * 60 * 1000;
+    public long PEER_TIMEOUT_MSEC = 30000; //5 * 60 * 1000;
 
     /**
      * Peer constructor. Called when creating the registration, followed by a
@@ -105,8 +106,18 @@ public class TrackerRegistration {
         }
 
         File dir = new File(path);
+        FileFilter filter = new RealFileFilter();
         if (dir != null) {
-            String[] filenames = dir.list();
+            File[] files = dir.listFiles(filter);
+            String[] filenames = new String[0];
+            String[] temp;
+
+            for (File file : files) {
+                temp = new String[1 + filenames.length];
+                temp[0] = file.getName();
+                System.arraycopy(filenames, 0, temp, 1, filenames.length);
+                filenames = temp;
+            }
 
             this.registeredPeers[0] = new RegisteredPeer(this.peer, filenames);
         } else {
@@ -210,17 +221,22 @@ public class TrackerRegistration {
         int currentIndex = 0;
         RegisteredPeer[] tempRegisteredPeers = new RegisteredPeer[0];
 
-        if (this.registeredPeers != null && this.registeredPeers[0] != null) {
-            for (RegisteredPeer loopPeer : this.registeredPeers) {
-                if (loopPeer.timestampMsec + this.PEER_TIMEOUT_MSEC < currentTime) {
-                    tempRegisteredPeers = new RegisteredPeer[this.registeredPeers.length - 1];
-                    System.arraycopy(this.registeredPeers, 0, tempRegisteredPeers, 0, currentIndex);
-                    System.arraycopy(this.registeredPeers, currentIndex + 1, tempRegisteredPeers, currentIndex, tempRegisteredPeers.length - currentIndex);
-                    this.registeredPeers = tempRegisteredPeers;
-                    continue;
-                }
-                currentIndex++;
+        if (this.registeredPeers == null) {
+            return;
+        }
+        if (this.registeredPeers[0] == null) {
+            return;
+        }
+        
+        for (RegisteredPeer loopPeer : this.registeredPeers) {
+            if (loopPeer.timestampMsec + this.PEER_TIMEOUT_MSEC < currentTime) {
+                tempRegisteredPeers = new RegisteredPeer[this.registeredPeers.length - 1];
+                System.arraycopy(this.registeredPeers, 0, tempRegisteredPeers, 0, currentIndex);
+                System.arraycopy(this.registeredPeers, currentIndex + 1, tempRegisteredPeers, currentIndex, tempRegisteredPeers.length - currentIndex);
+                this.registeredPeers = tempRegisteredPeers;
+                continue;
             }
+            currentIndex++;
         }
     }
 }

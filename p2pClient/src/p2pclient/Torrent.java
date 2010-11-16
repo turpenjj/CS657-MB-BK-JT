@@ -106,8 +106,13 @@ public class Torrent {
             md.update(toHash, 0, toHash.length);
             return md.digest();
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Trouble, no SHA1 algorithm");
+            Util.DebugPrint(DbgSub.TORRENT, "Trouble, no SHA1 algorithm");
             return null;
         }
+    }
+
+    public String toString() {
+        return "Filename = '" + this.filename + "'; File size = " + this.filesize + "; Number of Chunks = " + this.numChunks;
+
     }
 }

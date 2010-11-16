@@ -72,7 +72,7 @@ public class TrackerQuery {
         int[] i = {0};
 
         if (data.length < this.QUERY_DATA_BASE_SIZE) {
-            System.out.println("Import data (" + data.length + ") < base size ("
+            Util.DebugPrint(DbgSub.TRACKER_QUERY, "Import data (" + data.length + ") < base size ("
                     + this.QUERY_DATA_BASE_SIZE + ")");
             return false;
         }
@@ -82,7 +82,7 @@ public class TrackerQuery {
         }
 
         if ( i[0] + 4 > data.length) {
-            System.out.println("Not enough room for listening port in received data");
+            Util.DebugPrint(DbgSub.TRACKER_QUERY, "Not enough room for listening port in received data");
             return false;
         }
 
