@@ -16,9 +16,9 @@ public class ComponentTester {
          * then the higher-level components.
          */
 
-        if (ComponentTesterConfig.TEST_HOST) {
-            TestHost();
-        }
+//        if (ComponentTesterConfig.TEST_HOST) {
+//            TestHost();
+//        }
 
         if (ComponentTesterConfig.TEST_LIST_REMOVAL_ALGORITHM) {
             TestListRemovalAlgorithm();
@@ -683,9 +683,9 @@ public class ComponentTester {
                 ", messageData (" + messageData.length + ")");
     }
 
-    private static void TestHost() {
-        Host newHost = new Host(13454, ComponentTesterConfig.TEST_FILE_PATH_ROOT);
-    }
+//    private static void TestHost() {
+//        Host newHost = new Host(13454, ComponentTesterConfig.TEST_FILE_PATH_ROOT);
+//    }
 
     private static void TestServingClient() {
         int listeningPort = 54321;
