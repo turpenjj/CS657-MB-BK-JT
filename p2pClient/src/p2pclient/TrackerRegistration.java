@@ -27,7 +27,7 @@ public class TrackerRegistration {
     public Peer peer;
     private int BASE_MESSAGE_SIZE = 4; // listeningPort (4)
     // TODO: switch this back to private when we are done using it for testing
-    public static long PEER_TIMEOUT_MSEC = 15 * 1000;
+    public static long PEER_TIMEOUT_MSEC = 45 * 1000;
 
     /**
      * Peer constructor. Called when creating the registration, followed by a
@@ -224,7 +224,7 @@ public class TrackerRegistration {
         if (this.registeredPeers == null) {
             return;
         }
-        if (this.registeredPeers[0] == null) {
+        if (this.registeredPeers.length == 0 || this.registeredPeers[0] == null) {
             return;
         }
         

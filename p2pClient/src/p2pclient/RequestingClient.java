@@ -54,7 +54,6 @@ public class RequestingClient implements Runnable {
             if ( timeForListRequest < Util.GetCurrentTime() ) {
                 timeForListRequest = Util.GetCurrentTime() + LIST_REQUEST_FREQUENCY;
                 RequestChunkList();
-                Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "chunkStatus: " + chunkManager.chunkList[1].chunkInfo.status);
             }
             //TODO: Determine which chunk(s) to spin up requests for
             ChunkInfo[] missingChunks = chunkManager.NeededChunks();
@@ -78,8 +77,6 @@ public class RequestingClient implements Runnable {
                             break;
                         case 1: //request complete
                             Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Completed a Request");
-Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "MissingChunks: " + chunkManager.NeededChunks().length);
-Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "Chunk[1] = " + chunkManager.chunkList[1].chunk);
                             switch (packetType[0]) {
                                 case CHUNK_LIST_RESPONSE:
                                     ProcessChunkListResponse(data[0]);

@@ -288,7 +288,7 @@ public class GUI extends javax.swing.JFrame {
                 RegisteredPeer[] peers = tracker.registeredPeers.registeredPeers;
                 index = RegisteredPeersList.getSelectedIndex();
 
-                if ( peers != null && peers[0] != null ) {
+                if ( peers != null && peers.length > 0 && peers[0] != null ) {
                     list = new DefaultListModel();
                     RegisteredPeersList.removeAll();
                     for (int i = 0; i < peers.length; i++) {

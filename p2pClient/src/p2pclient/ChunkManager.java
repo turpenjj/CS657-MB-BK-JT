@@ -75,7 +75,7 @@ public class ChunkManager {
     }
 
     private synchronized ChunkInfo[] GetChunkList(int status) {
-        ChunkInfo[] chunks = null;
+        ChunkInfo[] chunks = new ChunkInfo[0];
 
         for ( int i = 0; i < chunkList.length; i++ ) {
             if ( chunkList[i].chunkInfo.status == status ) {
