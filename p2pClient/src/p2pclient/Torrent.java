@@ -83,7 +83,7 @@ public class Torrent {
     public static ChunkInfo[] AddToChunkInfoList(ChunkInfo[] list, ChunkInfo chunk) {
         ChunkInfo[] temp;
 
-        if (list == null || list[0] == null) {
+        if (list == null || list.length == 0 || list[0] == null) {
             temp = new ChunkInfo[1];
             temp[0] = chunk;
 

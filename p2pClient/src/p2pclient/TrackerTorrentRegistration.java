@@ -136,7 +136,7 @@ public class TrackerTorrentRegistration {
         int chunkNumber;
         byte[] chunkSha1sum = new byte[this.CHUNK_HASH_SIZE];
         int i;
-        ChunkInfo[] chunkInfoList = null;
+        ChunkInfo[] chunkInfoList = new ChunkInfo[0];
         ChunkInfo chunkInfo;
 
         if (blob.length < this.MESSAGE_BASE_SIZE) {

@@ -8,6 +8,8 @@ package p2pclient;
 import java.net.*;
 import java.io.*;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -26,6 +28,11 @@ public class Host implements Runnable{
 //    boolean isTracker;
 //    Tracker tracker;
     Peer peerTracker;
+    private long torrentBroadcastTimeout;
+    public static int TORRENT_BROADCAST_FREQUENCY = 45000; //45 seconds
+    private long trackerRegistrationBroadcastTimeout;
+    public static int TRACKER_REGISTRATION_FREQUENCY = 30000; //30 seconds
+    public static int SEARCH_TIMEOUT = 10000; //10 seconds
 
     public Host(int servingClientListeningPort, String directory, String trackerIp) throws UnknownHostException {
         runner = null;
@@ -39,20 +46,9 @@ public class Host implements Runnable{
 //        tracker = null;
        Util.DebugPrint(DbgSub.HOST, trackerIp);
         peerTracker = new Peer(this.trackerIP, Tracker.TRACKER_LISTENING_PORT);
+        torrentBroadcastTimeout = Util.GetCurrentTime(); //broadcast our torrents when we first spin up
+        trackerRegistrationBroadcastTimeout = Util.GetCurrentTime(); //broadcast our registrationg when we first spin up
     }
-
-//    public Host(int servingClientListeningPort, String directory, String trackerIp, boolean isTracker) throws UnknownHostException {
-//        runner = null;
-//        listeningPort = servingClientListeningPort;
-//        shareFolder = directory + "\\";
-//        chunkManagers = PopulateChunkManagers();
-//        peerManager = new PeerManager();
-//        servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
-//        trackerIP = InetAddress.getByName(trackerIp);
-////        isTracker = true;
-////        tracker = new Tracker(Tracker.TRACKER_LISTENING_PORT);
-//        peerTracker = new Peer(InetAddress.getByName("192.168.1.101"), Tracker.TRACKER_LISTENING_PORT);
-//    }
 
     public void start() {
         if ( runner == null ) {
@@ -65,24 +61,21 @@ public class Host implements Runnable{
         Util.DebugPrint(DbgSub.HOST, "Startng a new host, listening for connections on port " + listeningPort);
         //Start our listener so we can serve out file chunks upon request
         servingClient.start();
-        MessageSend messageSender = new MessageSend();
-
-        try {
-//            if ( isTracker ) {
-//                tracker.start();
-//            }
-            TrackerRegistration trackerRegistration = new TrackerRegistration(listeningPort);
-
-            trackerRegistration.AddFilesFromDirectory(shareFolder);
-
-            byte[] registrationMessageData = trackerRegistration.ExportMessagePayload();
-
-            messageSender.SendCommunication(peerTracker, PacketType.TRACKER_REGISTRATION, Tracker.TRACKER_LISTENING_PORT, registrationMessageData);
-        } catch (Exception e) {
-            Util.DebugPrint(DbgSub.HOST, "Caught exception " + e);
-        }
 
         for ( ;; ) {
+            //Check if it's time to broadcast our tracker registration
+            if ( trackerRegistrationBroadcastTimeout < Util.GetCurrentTime() ) {
+                BroadcastTrackerRegistration();
+                //update broadcast timeout
+                trackerRegistrationBroadcastTimeout = Util.GetCurrentTime() + TRACKER_REGISTRATION_FREQUENCY;
+            }
+
+            //Check if it's time to broadcast our torrent knowledge
+            if ( torrentBroadcastTimeout < Util.GetCurrentTime() ) {
+                BroadcastTorrents();
+                //update broadcast timeout
+                torrentBroadcastTimeout = Util.GetCurrentTime() + TORRENT_BROADCAST_FREQUENCY;
+            }
 
         }
 
@@ -214,7 +207,7 @@ public class Host implements Runnable{
         int searchListeningPort = Util.GetRandomHighPort(new Random());
         MessageSend messageSender = new MessageSend();
         PacketType[] acceptedPacketType = {PacketType.TRACKER_QUERY_RESPONSE};
-        MessageReceive queryMessageReceive = new MessageReceive(searchListeningPort, acceptedPacketType, false);
+        MessageReceive queryMessageReceive = new MessageReceive(searchListeningPort, acceptedPacketType, true);
         queryMessageReceive.start();
         byte[] receivedMessageData;
         Peer[] receivedPeer = new Peer[1];
@@ -229,12 +222,9 @@ public class Host implements Runnable{
         Util.DebugPrint(DbgSub.HOST, trackerPeer.clientIp);
         messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_QUERY, sessionId, trackerQuery.ExportQuery());
 
-        Thread.sleep(1000);
-
-        receivedMessageData = queryMessageReceive.GetMessage(sessionId, acceptedPacketType, receivedPeer, receivedPacketType, receivedSessionId);
-        if ( receivedMessageData != null ) {
-            Util.DebugPrint(DbgSub.HOST, "received Message " + Util.ConvertToHex(receivedMessageData));
-        }
+        long searchTimeout = Util.GetCurrentTime() + SEARCH_TIMEOUT;
+        while ( Util.GetCurrentTime() < searchTimeout ) {
+            receivedMessageData = queryMessageReceive.GetMessage(sessionId, acceptedPacketType, receivedPeer, receivedPacketType, receivedSessionId);
             if (receivedMessageData != null) {
                 trackerQueryResponse = new TrackerQueryResponse();
                 trackerQueryResponse.ImportResponse(receivedMessageData);
@@ -248,11 +238,100 @@ public class Host implements Runnable{
                 } else {
                     queryMessageReceive.Stop();
                 }
-            } else {
-                queryMessageReceive.Stop();
-                return null;
             }
+            Thread.yield();
+        }
         return null;
+    }
+
+    private synchronized void BroadcastTrackerRegistration() {
+        try {
+            Util.DebugPrint(DbgSub.HOST, "Broadcasting our registrationg to the tracker");
+            MessageSend messageSender = new MessageSend();
+            TrackerRegistration trackerRegistration = new TrackerRegistration(listeningPort);
+
+            trackerRegistration.AddFilesFromDirectory(shareFolder);
+
+            byte[] registrationMessageData = trackerRegistration.ExportMessagePayload();
+
+            messageSender.SendCommunication(peerTracker, PacketType.TRACKER_REGISTRATION, Util.GetRandomHighPort(new java.util.Random()), registrationMessageData);
+
+        } catch (Exception e) {
+            Util.DebugPrint(DbgSub.HOST, "Caught exception " + e);
+        }
+    }
+
+    private synchronized String[] GetAllFilesInSharedDir() {
+        File dir = new File(shareFolder);
+        FileFilter filter = new RealFileFilter();
+        String[] filenames = new String[0];
+        if (dir != null && dir.exists() && dir.isDirectory()) {
+            File[] files = dir.listFiles(filter);
+            String[] temp;
+
+            for (File file : files) {
+                temp = new String[1 + filenames.length];
+                temp[0] = file.getName();
+                System.arraycopy(filenames, 0, temp, 1, filenames.length);
+                filenames = temp;
+            }
+        }
+
+        return filenames;
+
+    }
+
+    private synchronized void BroadcastTorrents() {
+        MessageSend messageSender = new MessageSend();
+        Util.DebugPrint(DbgSub.HOST, "Attempting to broadcast torrents");
+
+        Torrent torrent;
+        String[] allTorrents = GetAllFilesInSharedDir();
+        int torrentQueryPort = Util.GetRandomHighPort(new java.util.Random());
+        PacketType[] acceptedPacketType = {PacketType.TRACKER_TORRENT_RESPONSE};
+        MessageReceive torrentQueryReceive = new MessageReceive(torrentQueryPort, acceptedPacketType, true);
+        if ( allTorrents == null ) {
+            return;
+        }
+        torrentQueryReceive.start();
+
+        int torrentIndex = 0;
+        //Request all torrents, we'll only broadcast the torrents the tracker doesn't
+        //have or doesn't respond to
+        for ( String fileToTorrent : allTorrents ) {
+            TrackerTorrentQuery trackerTorrentQuery = new TrackerTorrentQuery(fileToTorrent, torrentQueryPort);
+            messageSender.SendCommunication(peerTracker, PacketType.TRACKER_TORRENT_QUERY, (torrentQueryPort+torrentIndex), trackerTorrentQuery.ExportQuery());
+            torrentIndex++;
+        }
+        try {
+            Thread.sleep(5000);
+            for ( int i = 0; i < torrentIndex; i ++ ) {
+                //Request a message for each Torrent. If we don't have a message, that torrent needs to be broadcast
+                boolean shouldBroadcast = false;
+                PacketType[] receivedPacketType = new PacketType[1];
+
+                byte[] messageReceived = torrentQueryReceive.GetMessage(torrentQueryPort+i, acceptedPacketType, null, null, null);
+                if ( messageReceived != null ) {
+                    TrackerTorrentResponse trackerTorrentResponse = new TrackerTorrentResponse();
+                    trackerTorrentResponse.ImportMessagePayload(messageReceived);
+                    if ( trackerTorrentResponse.torrent == null || trackerTorrentResponse.torrent.numChunks == 0 ) {
+                        shouldBroadcast = true;
+                    }
+                } else {
+                    shouldBroadcast = true;
+                }
+                //No message received or no torrent received, broadcast out torrent
+                if ( shouldBroadcast ) {
+                    Util.DebugPrint(DbgSub.HOST, "Broadcasting torrent information for " + allTorrents[i]);
+                    torrent = new Torrent(shareFolder, allTorrents[i]);
+                    TrackerTorrentRegistration torrentRegistration = new TrackerTorrentRegistration(torrent);
+                    byte[] torrentRegistrationData = torrentRegistration.ExportMessagePayload();
+                    messageSender.SendCommunication(peerTracker, PacketType.TRACKER_TORRENT_REGISTRATION, Util.GetRandomHighPort(new java.util.Random()), torrentRegistrationData);
+                }
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(Host.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     private synchronized ChunkManager[] PopulateChunkManagers() {
