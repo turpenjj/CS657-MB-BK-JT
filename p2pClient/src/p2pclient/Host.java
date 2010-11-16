@@ -27,9 +27,6 @@ public class Host implements Runnable{
         listeningPort = servingClientListeningPort;
         shareFolder = directory;
         chunkManagers = PopulateChunkManagers();
-//        chunkManagers = new ChunkManager[2];
-//        chunkManagers[0] = new ChunkManager("fu");
-//        chunkManagers[1] = new ChunkManager("man");
         servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
 
     }
@@ -78,12 +75,19 @@ public class Host implements Runnable{
      *   requests for
      */
     public synchronized String[] GetCurrentDownloads(){
-        String[] currentDownloads = new String[5];
-        currentDownloads[0] = "download1.foo";
-        currentDownloads[1] = "download2.foo";
-        currentDownloads[2] = "download3.foo";
-        currentDownloads[3] = "download4.foo";
-        currentDownloads[4] = "download5.foo";
+        String[] currentDownloads = null;
+        for ( ChunkManager chunkManager : chunkManagers ) {
+            if (chunkManager.NeededChunks() != null || chunkManager.DownloadingChunks() != null ) {
+                if ( currentDownloads == null ) {
+                    currentDownloads = new String[1];
+                } else {
+                    String[] tempList = new String[currentDownloads.length + 1];
+                    System.arraycopy(currentDownloads, 0, tempList, 0, currentDownloads.length);
+                    currentDownloads = tempList;
+                }
+                currentDownloads[currentDownloads.length - 1] = chunkManager.filename;
+            }
+        }
         return currentDownloads;
     }
 
