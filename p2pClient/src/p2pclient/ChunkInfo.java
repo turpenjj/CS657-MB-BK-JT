@@ -10,7 +10,7 @@ package p2pclient;
  * @author Matt
  */
 public class ChunkInfo {
-    int chunkNumber;
+    public int chunkNumber;
     byte[] hash = new byte[20];
     public volatile int status; //0 = missing, 1 = downloading, 2 = available
     public volatile Peer receivedFrom;
