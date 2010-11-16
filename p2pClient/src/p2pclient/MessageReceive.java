@@ -35,6 +35,7 @@ public class MessageReceive extends Util implements Runnable {
 
     MessageReceive(int listeningPort, PacketType[] acceptedPacketTypes, boolean permanent) {
         this.acceptedPacketTypes = acceptedPacketTypes;
+        this.listeningPort = listeningPort;
         try {
             this.listeningSocket = new DatagramSocket(listeningPort);
             if ( !permanent ) {
