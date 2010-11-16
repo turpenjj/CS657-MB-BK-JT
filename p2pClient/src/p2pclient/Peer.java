@@ -12,7 +12,7 @@ import java.net.*;
  */
 public class Peer {
     public InetAddress clientIp;
-    int listeningPort;
+    public int listeningPort;
     public String[] fileList;
     int[][] chunkList; //[fileIndex][chunkIndex]
     public int creditForThem; //The credit associated with this peer
