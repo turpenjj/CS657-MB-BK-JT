@@ -8,12 +8,23 @@ import java.io.*;
 import java.net.*;
 import java.util.Calendar;
 import java.io.UnsupportedEncodingException;
+import java.util.Random;
 
 /**
  *
  * @author Matt
  */
 public class Util {
+    public static void DebugPrint(DbgSub subsys, Object object) {
+        if (ComponentTesterConfig.DebugLevels[subsys.ordinal()]) {
+            System.out.println(subsys + ": " + object);
+        }
+    }
+    
+    public static int GetRandomHighPort(Random rand) {
+        return (rand.nextInt(65535 - 49152) + 49152);
+    }
+
     public static String ConvertToHex(byte[] data) {
         StringBuffer buf = new StringBuffer();
 
@@ -116,7 +127,7 @@ public class Util {
         try {
            string = new String(b, startingIndex, i - startingIndex, "US-ASCII");
         } catch (UnsupportedEncodingException e) {
-            System.out.println("Received encoding exception " + e);
+            Util.DebugPrint(DbgSub.UTIL, "Received encoding exception " + e);
             return null;
         }
         // move past the null-terminator
@@ -134,7 +145,7 @@ public class Util {
         try {
            s = string.getBytes("US-ASCII");
         } catch (UnsupportedEncodingException e) {
-            System.out.println("Received encoding exception " + e);
+            Util.DebugPrint(DbgSub.UTIL, "Received encoding exception " + e);
             return startingIndex;
         }
 
@@ -174,7 +185,7 @@ public class Util {
 //           sendingSocket.send(packetToSend);
 //           sendingSocket.close();
 //        } catch ( IOException e ) {
-//            System.out.println("SendPacket Error: " + e);
+//            Util.DebugPrint(DbgSub.UTIL, "SendPacket Error: " + e);
 //            return false;
 //        }
 //        return true;
@@ -197,7 +208,7 @@ public class Util {
 //            peer.clientIp = senderIP;
 //            lengthReceived = receivedPacket.getLength();
 //        } catch ( IOException e ) {
-//            System.out.println("ReceivePacket Error: " + e);
+//            Util.DebugPrint(DbgSub.UTIL, "ReceivePacket Error: " + e);
 //        }
 //        return lengthReceived;
 //    }
@@ -225,7 +236,7 @@ public class Util {
 //                sessionID = packetHeader.sessionID;
 //                receivedData = new byte[packetHeader.totalSize];
 //            } else if ( sessionID != packetHeader.sessionID ) {
-//                System.out.println("Received packet for the wrong session");
+//                Util.DebugPrint(DbgSub.UTIL, "Received packet for the wrong session");
 //                return 0;
 //            }
 //            System.arraycopy(rawReceivedData, 16, receivedData, packetHeader.offset, bytesRead - 16);
