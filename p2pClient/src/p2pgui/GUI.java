@@ -9,8 +9,10 @@ package p2pgui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 import java.util.logging.Level;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
@@ -37,6 +39,7 @@ public class GUI extends javax.swing.JFrame {
     private Tracker tracker;
     private String searchFileName;
     private Peer[] hostingPeers;
+    private Vector RegisteredPeersPorts = new Vector();
 
     private GUI()
     {
@@ -186,7 +189,9 @@ public class GUI extends javax.swing.JFrame {
                 if ( peer != null ) {
                     RegisteredPeer[] peers = tracker.registeredPeers.registeredPeers;
                     for (int i = 0; i < peers.length; i++) {
-                        if ( peers[i].peer.clientIp.toString().equals(peer) ) {
+                        String peerWithPort = peers[i].peer.clientIp.toString() + ":" + String.valueOf(peers[i].peer.listeningPort);
+                        if ( peerWithPort.equals(peer) &&
+                                    ((Integer)peers[i].peer.listeningPort).equals(((Integer)RegisteredPeersPorts.elementAt(i))) ) {
                             String[] files = peers[i].files;
                             DefaultTableModel model = (DefaultTableModel) RegisteredPeersTable.getModel();
                             model.setRowCount(0);
@@ -295,8 +300,10 @@ public class GUI extends javax.swing.JFrame {
                 if ( peers != null && peers.length > 0 && peers[0] != null ) {
                     list = new DefaultListModel();
                     RegisteredPeersList.removeAll();
+                    RegisteredPeersPorts.clear();
                     for (int i = 0; i < peers.length; i++) {
-                        list.addElement(peers[i].peer.clientIp.toString());
+                        list.addElement(peers[i].peer.clientIp.toString() + ":" + peers[i].peer.listeningPort);
+                        RegisteredPeersPorts.add(peers[i].peer.listeningPort);
                     }
                     RegisteredPeersList.setModel(list);
                     RegisteredPeersList.setSelectedIndex(index);
