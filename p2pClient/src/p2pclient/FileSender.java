@@ -65,7 +65,7 @@ public class FileSender extends Util {
 ////                currentChunk.SetOffset(fileOffset);
 ////                currentChunk.SetLength(len);
 //                currentChunk.SetChunk(buf, len);
-//                System.out.println("Sending chunk with hash: " + currentChunk.GetHashString() + "and length: " + lengthToSend);
+//                Util.DebugPrint(DbgSub.FILE_SENDER, "Sending chunk with hash: " + currentChunk.GetHashString() + "and length: " + lengthToSend);
 ////                System.arraycopy(IntToByteArray(currentChunk.GetOffset()), 0, sendBuffer, 0, 4);
 ////                System.arraycopy(IntToByteArray(currentChunk.GetLength()), 0, sendBuffer, 4, 4);
 //                System.arraycopy(currentChunk.GetHash(), 0, sendBuffer, 8, currentChunk.GetHash().length);
@@ -79,7 +79,7 @@ public class FileSender extends Util {
 //            }
 //            clientSocket.close();
 //        } catch ( IOException e ) {
-//            System.out.println("Exception: " + e);
+//            Util.DebugPrint(DbgSub.FILE_SENDER, "Exception: " + e);
 //        }
 //    }
 }

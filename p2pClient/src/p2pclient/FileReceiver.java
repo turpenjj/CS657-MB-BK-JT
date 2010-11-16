@@ -30,7 +30,7 @@ public class FileReceiver extends Util {
 
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
-                System.out.println("Waiting for datagram packet");
+                Util.DebugPrint(DbgSub.FILE_RECEIVER, "Waiting for datagram packet");
 
                 receiverSocket.receive(receivePacket);
                 InetAddress IPAddress = receivePacket.getAddress();
@@ -41,10 +41,10 @@ public class FileReceiver extends Util {
 
                 ProcessPacket(myData, length);
 
-                System.out.println("Received packet from " + IPAddress + ":" + port);
+                Util.DebugPrint(DbgSub.FILE_RECEIVER, "Received packet from " + IPAddress + ":" + port);
             }
         } catch (SocketException ex) {
-            System.out.println("UDP port unavailable");
+            Util.DebugPrint(DbgSub.FILE_RECEIVER, "UDP port unavailable");
             System.exit(1);
         }
     }
@@ -62,7 +62,7 @@ public class FileReceiver extends Util {
             file_output.close();
 
         } catch (IOException e) {
-            System.out.println("IO Exception: " + e);
+            Util.DebugPrint(DbgSub.FILE_RECEIVER, "IO Exception: " + e);
         }
 
         return true;
@@ -71,7 +71,7 @@ public class FileReceiver extends Util {
     private static void ProcessPacket( byte[] data, int length ) {
         String myString = new String(data);
 
-//        System.out.println("Received: " + myString);
+//        Util.DebugPrint(DbgSub.FILE_RECEIVER, "Received: " + myString);
 //        String tempFilename = "ReceivedFile.tmp.";
 //        FileChunk recvChunk = new FileChunk(tempFilename, 0);
 //        byte[] temp = new byte[4];
@@ -84,11 +84,11 @@ public class FileReceiver extends Util {
 ////        recvChunk.SetLength(ByteArrayToInt(temp));
 ////        System.arraycopy(data, 8, dataHash, 0, dataHash.length);
 //
-//        System.out.println("buffer length: " + data.length + " vs " + length);
-//        System.out.println("Received data: " + recvChunk.ConvertToHex(data));
-////        System.out.println("Received data length: " + dataLength + " vs expected " + recvChunk.GetLength());
-////        System.out.println("Data offset: " + recvChunk.GetOffset());
-//        System.out.println("Hash: " + recvChunk.ConvertToHex(dataHash));
+//        Util.DebugPrint(DbgSub.FILE_RECEIVER, "buffer length: " + data.length + " vs " + length);
+//        Util.DebugPrint(DbgSub.FILE_RECEIVER, "Received data: " + recvChunk.ConvertToHex(data));
+////        Util.DebugPrint(DbgSub.FILE_RECEIVER, "Received data length: " + dataLength + " vs expected " + recvChunk.GetLength());
+////        Util.DebugPrint(DbgSub.FILE_RECEIVER, "Data offset: " + recvChunk.GetOffset());
+//        Util.DebugPrint(DbgSub.FILE_RECEIVER, "Hash: " + recvChunk.ConvertToHex(dataHash));
 //
 //        byte[] dataToWrite = new byte[dataLength];
 //        System.arraycopy(data, 28, dataToWrite, 0, dataLength);
