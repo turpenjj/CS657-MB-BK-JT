@@ -75,7 +75,7 @@ public class Tracker implements Runnable {
      * classes (TrackerQuery, TrackerQueryResponse, TrackerRegistration,
      * TrackerTorrentRegistration as necessary).
      */
-    private void ProcessQuery(Peer peer, PacketType packetType, int sessionID, byte[] messageData) {
+    private synchronized void ProcessQuery(Peer peer, PacketType packetType, int sessionID, byte[] messageData) {
         byte[] responseData;
         Peer[] peers;
         Torrent torrent;

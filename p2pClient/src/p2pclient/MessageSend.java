@@ -43,7 +43,8 @@ public class MessageSend {
             InetAddress ipAddress = peer.clientIp;
             DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, ipAddress, peer.listeningPort);
             sendingSocket.send(packet);
-            Util.DebugPrint(DbgSub.MESSAGE_SEND, "Sent out packet to " + ipAddress + " on port " + peer.listeningPort);;
+            Util.DebugPrint(DbgSub.MESSAGE_SEND, "Sent out packet to " + ipAddress + " on port " + peer.listeningPort);
+            Util.DebugPrint(DbgSub.MESSAGE_SEND, Util.ConvertToHex(sendBuffer));
         } catch ( IOException e) {
             Util.DebugPrint(DbgSub.MESSAGE_SEND, "SocketSend encountered an error: " + e);
         }

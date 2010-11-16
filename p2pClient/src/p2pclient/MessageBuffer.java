@@ -24,6 +24,7 @@ public class MessageBuffer {
         this.sessionID = initialHeader.sessionID;
         this.totalBytesReceived = 0;
         this.messageData = new byte[this.packetHeader.totalSize];
+        Util.DebugPrint(DbgSub.MESSAGE_BUFFER, peer.clientIp);
     }
 
     public void AddDataToMessage(PacketHeader incomingHeader, byte[] incomingData) {

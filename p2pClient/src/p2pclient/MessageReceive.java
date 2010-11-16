@@ -107,6 +107,7 @@ public class MessageReceive implements Runnable {
                 }
                 if ( accept ) {
                     Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "Accepting this packet");
+                    Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, Util.ConvertToHex(receivedPacketData));
                     if ( (messageBuff = FindMessage(packetHeader[0].sessionID)) != null ) {
                         messageBuff.AddDataToMessage(packetHeader[0], receivedPacketData);
                     } else {
@@ -250,6 +251,7 @@ public class MessageReceive implements Runnable {
         try {
             this.listeningSocket.receive(receivedPacket);
             InetAddress senderIP = receivedPacket.getAddress();
+            Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, " " + senderIP);
             peer[0] = new Peer(senderIP, 0);
 
             byte[] data = receivedPacket.getData();

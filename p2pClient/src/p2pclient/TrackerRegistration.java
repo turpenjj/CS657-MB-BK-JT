@@ -27,7 +27,7 @@ public class TrackerRegistration {
     public Peer peer;
     private int BASE_MESSAGE_SIZE = 4; // listeningPort (4)
     // TODO: switch this back to private when we are done using it for testing
-    public long PEER_TIMEOUT_MSEC = 30000; //5 * 60 * 1000;
+    public long PEER_TIMEOUT_MSEC = 300000; //5 * 60 * 1000;
 
     /**
      * Peer constructor. Called when creating the registration, followed by a
