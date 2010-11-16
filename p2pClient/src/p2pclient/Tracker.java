@@ -24,15 +24,15 @@ public class Tracker implements Runnable {
     private MessageReceive messageReceiver; // receives messages on the tracker listening port
     private MessageSend messageSender; // all sends are done on the listening thread in response to queries
     private int listeningPort;
-    private TrackerRegistration registeredPeers; // tracks all peers registered with the tracker
-    private TrackerTorrentRegistration registeredTorrents; // tracks all torrents registered with the tracker
+    public TrackerRegistration registeredPeers; // tracks all peers registered with the tracker
+    public TrackerTorrentRegistration registeredTorrents; // tracks all torrents registered with the tracker
     // message types the tracker is listening for
     private PacketType[] acceptedPacketTypes = {
         PacketType.TRACKER_QUERY, PacketType.TRACKER_REGISTRATION,
         PacketType.TRACKER_TORRENT_REGISTRATION, PacketType.TRACKER_TORRENT_QUERY};
     public static int TRACKER_LISTENING_PORT = 51966;
 
-    Tracker(int listeningPort) {
+    public Tracker(int listeningPort) {
         this.listeningPort = listeningPort;
         this.registeredPeers = new TrackerRegistration();
         this.registeredTorrents = new TrackerTorrentRegistration();

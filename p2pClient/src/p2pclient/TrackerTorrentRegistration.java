@@ -27,7 +27,7 @@ package p2pclient;
  */
 public class TrackerTorrentRegistration {
     // will only be one element on the peer (the single torrent it is registering)
-    private Torrent[] registeredTorrents;
+    public Torrent[] registeredTorrents;
     private int MESSAGE_BASE_SIZE = 1 + 4 + 4; // filename null terminator (1), filesize (4), numberOfChunks (4)
     private int CHUNK_HASH_SIZE = 20; // sha1sum size
     private int MESSAGE_CHUNK_DATA_SIZE = 4 + CHUNK_HASH_SIZE; // chunkNumber (4), sha1sum

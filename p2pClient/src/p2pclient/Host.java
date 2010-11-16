@@ -6,6 +6,7 @@
 package p2pclient;
 
 import java.net.*;
+import java.io.*;
 
 /**
  *
@@ -70,7 +71,6 @@ public class Host implements Runnable{
 
     }
 
-
     /*
      * Description:
      *   Returns a list of all Files there are currently outstanding download
@@ -84,6 +84,12 @@ public class Host implements Runnable{
         currentDownloads[3] = "download4.foo";
         currentDownloads[4] = "download5.foo";
         return currentDownloads;
+    }
+
+    public synchronized String[] GetCurrentUploads() {
+        String[] currentUploads = new String[1];
+        currentUploads[0] = "upload1.foo";
+        return currentUploads;
     }
 
     /*
@@ -124,7 +130,7 @@ public class Host implements Runnable{
     /*
      * Starts downloading a file from a specific peer
      */
-    private synchronized void StartDownload(String filename, Peer peer) {
+    public synchronized void StartDownload(String filename, Peer peer) {
         ChunkManager chunkManager = FindChunkManager(filename);
 
         //If we couldn't find the chunk manager for this file, we can't download it!
@@ -165,5 +171,22 @@ public class Host implements Runnable{
      */
     public synchronized Peer[] Search(String filename) {
         return null;
+    }
+
+    private void AddFilesFromDirectory(String directory) {
+        File dir = new File(directory);
+        FileFilter filter = new RealFileFilter();
+        if (dir != null && dir.exists() && dir.isDirectory()) {
+            File[] files = dir.listFiles(filter);
+            String[] filenames = new String[0];
+            String[] temp;
+
+            for (File file : files) {
+                temp = new String[1 + filenames.length];
+                temp[0] = file.getName();
+                System.arraycopy(filenames, 0, temp, 1, filenames.length);
+                filenames = temp;
+            }
+        }
     }
 }
