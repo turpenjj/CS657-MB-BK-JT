@@ -5,8 +5,8 @@ package p2pclient;
  * @author Jeremy
  */
 public class ComponentTesterConfig {
-    public static String TEST_FILE_PATH_ROOT = "Z:/Class/CS657-ComputerNetworks/Git/CS657-MB-BK-JT/p2pClient/src/p2pclient/TestFilesDir/";
-//    public static String TEST_FILE_PATH_ROOT = "D:/GradSchool/C657-Networking/Project/GitHubRepo/p2pClient/src/p2pclient/TestFilesDir/";
+//    public static String TEST_FILE_PATH_ROOT = "Z:/Class/CS657-ComputerNetworks/Git/CS657-MB-BK-JT/p2pClient/src/p2pclient/TestFilesDir/";
+    public static String TEST_FILE_PATH_ROOT = "D:/GradSchool/C657-Networking/Project/GitHubRepo/p2pClient/src/p2pclient/TestFilesDir/";
     
     public static boolean TEST_LIST_REMOVAL_ALGORITHM = false;
     public static boolean TEST_UTIL_EXTRACT_NULL_TERMINATED_STRING = false;
@@ -41,7 +41,7 @@ public class ComponentTesterConfig {
         false, //    FILE_CHUNK,
         false, //    FILE_RECEIVER,
         false, //    FILE_SENDER,
-        false, //    HOST,
+        true, //    HOST,
         false, //    LIST_OF_FILES,
         false, //    MESSAGE_BUFFER,
         false, //    MESSAGE_RECEIVE,
@@ -51,8 +51,8 @@ public class ComponentTesterConfig {
         false, //    PEER,
         false, //    PEER_MANAGER,
         false, //    REGISTERED_PEER,
-        false, //    REQUESTING_CLIENT,
-        false, //    SERVING_CLIENT,
+        true, //    REQUESTING_CLIENT,
+        true, //    SERVING_CLIENT,
         false, //    TORRENT,
         false, //    TRACKER,
         false, //    TRACKER_QUERY,

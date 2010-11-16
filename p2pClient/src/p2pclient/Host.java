@@ -29,9 +29,9 @@ public class Host implements Runnable{
 //    Tracker tracker;
     Peer peerTracker;
     private long torrentBroadcastTimeout;
-    public static int TORRENT_BROADCAST_FREQUENCY = 45000; //45 seconds
+    public static int TORRENT_BROADCAST_FREQUENCY = 20000; //20 seconds
     private long trackerRegistrationBroadcastTimeout;
-    public static int TRACKER_REGISTRATION_FREQUENCY = 30000; //30 seconds
+    public static int TRACKER_REGISTRATION_FREQUENCY = 40000; //40 seconds
     public static int SEARCH_TIMEOUT = 10000; //10 seconds
 
     public Host(int servingClientListeningPort, String directory, String trackerIp) throws UnknownHostException {
@@ -172,18 +172,18 @@ public class Host implements Runnable{
         torrentReceiver.start();
         MessageSend torrentRequestor = new MessageSend();
         TrackerTorrentQuery torrentRequest = new TrackerTorrentQuery(filename, torrentListeningPort);
-        torrentRequestor.SendCommunication(peerTracker, PacketType.TRACKER_TORRENT_QUERY, listeningPort, torrentRequest.ExportQuery());
+        torrentRequestor.SendCommunication(peerTracker, PacketType.TRACKER_TORRENT_QUERY, torrentListeningPort, torrentRequest.ExportQuery());
         Peer[] receivedPeer = new Peer[1];
         int[] receivedSessionId = new int[1];
         PacketType[] receivedPacketType = new PacketType[1];
         while ( Util.GetCurrentTime() < downloadTimeout ) {
             //Request the torrent file
-            byte[] receivedMessage = torrentReceiver.GetMessage(listeningPort, acceptedPacketType, receivedPeer,  receivedPacketType, receivedSessionId);
+            byte[] receivedMessage = torrentReceiver.GetMessage(torrentListeningPort, acceptedPacketType, receivedPeer,  receivedPacketType, receivedSessionId);
             if ( receivedMessage != null ) {
                 TrackerTorrentResponse torrentResponse = new TrackerTorrentResponse();
                 torrentResponse.ImportMessagePayload(receivedMessage);
                 if ( torrentResponse.torrent.numChunks > 0 ) {
-                    chunkManager = new ChunkManager(torrentResponse.torrent, ComponentTesterConfig.TEST_FILE_PATH_ROOT);
+                    chunkManager = new ChunkManager(torrentResponse.torrent, shareFolder);
                     AddChunkManager(chunkManager);
                     Util.DebugPrint(DbgSub.HOST, "Added a chunk manager");
                 }
@@ -416,7 +416,7 @@ public class Host implements Runnable{
                 byteBuffer = new byte[torrent.CHUNK_SIZE];
             }
 
-            ChunkManager chunkManager = new ChunkManager(torrent.filename, ComponentTesterConfig.TEST_FILE_PATH_ROOT);
+            ChunkManager chunkManager = new ChunkManager(torrent.filename, shareFolder);
             chunkManager.chunkList = new FileChunk[torrent.numChunks];
             for ( int i = 0; i < torrent.numChunks; i++ ) {
                 chunkManager.chunkList[i] = new FileChunk(torrent.chunks[i].chunkNumber, torrent.chunks[i].hash, torrent.chunks[i].status, null);

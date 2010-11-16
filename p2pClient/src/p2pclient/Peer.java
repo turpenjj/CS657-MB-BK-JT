@@ -139,6 +139,7 @@ public class Peer {
         int fileIndex = GetFileIndexIntoSentList(filename);
         if ( fileIndex == -1 ) {
             filesWeSent = new String[1];
+            filesWeSent[0] = filename;
             chunksWeSent = new int[1][];
             chunksWeSent[0] = new int[1];
             chunksWeSent[0][0] = chunkNumber;

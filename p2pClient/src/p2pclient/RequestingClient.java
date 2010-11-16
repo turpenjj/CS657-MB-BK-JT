@@ -58,10 +58,10 @@ public class RequestingClient implements Runnable {
             //TODO: Determine which chunk(s) to spin up requests for
             ChunkInfo[] missingChunks = chunkManager.NeededChunks();
             for (int i = 0; i < missingChunks.length; i++) {
-                if ( servingHost.HasChunk(filename, i) ) {
+                if ( servingHost.HasChunk(filename, missingChunks[i].chunkNumber) ) {
                     if ( servingHost.ShouldRequest() ) {
                         Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Requesting chunk " + i + " from " + servingHost.clientIp);
-                        RequestChunk(i);
+                        RequestChunk(missingChunks[i].chunkNumber);
                     } else {
                     }
                 }
