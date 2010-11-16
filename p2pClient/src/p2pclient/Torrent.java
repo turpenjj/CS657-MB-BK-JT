@@ -16,8 +16,10 @@ public class Torrent {
     public int filesize;
     public int numChunks;
     public ChunkInfo[] chunks;
-    public static int CHUNK_SIZE = 1000;
+    public static int CHUNK_SIZE = 10;
     public long timestamp; // timestamp at which this torrent was created
+    // TODO: get rid of this once we aren't using it for testing
+    public byte[] fileDataTemp;
 
     /**
      * Tracker constructor. Called with info from TRACKER_REGISTER_TORRENT message.
@@ -28,6 +30,7 @@ public class Torrent {
         this.chunks = chunkInfoList;
         this.numChunks = chunkInfoList.length;
         this.timestamp = Util.GetCurrentTime();
+        this.fileDataTemp = new byte[0];
     }
 
     /**
@@ -58,6 +61,8 @@ public class Torrent {
                 currentIndex += bytesRead;
             }
         }
+
+        this.fileDataTemp = fileData;
         
         this.numChunks = (int)(totalLength / Torrent.CHUNK_SIZE);
         if (this.numChunks * Torrent.CHUNK_SIZE < totalLength) {

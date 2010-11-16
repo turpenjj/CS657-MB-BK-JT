@@ -249,4 +249,60 @@ public class Util {
     public static long GetCurrentTime() {
         return (Calendar.getInstance()).getTimeInMillis();
     }
+
+    public static byte[] ReadFileData(String path, String filename) {
+        File file = new File(path + File.separator + filename);
+        FileInputStream fileInputStream;
+        long totalLength;
+        byte[] fileData;
+        int i;
+        int bytesRead;
+        int currentIndex;
+
+        try {
+            fileInputStream = new FileInputStream(file);
+        } catch (Exception e) {
+            Util.DebugPrint(DbgSub.UTIL, "Caught exception " + e);
+
+            return null;
+        }
+        totalLength = file.length();
+        fileData = new byte[(int)totalLength];
+
+        currentIndex = 0;
+        bytesRead = 1;
+        while (currentIndex < fileData.length && bytesRead > 0) {
+            try {
+                bytesRead = fileInputStream.read(fileData, currentIndex, fileData.length - currentIndex);
+            } catch (Exception e) {
+                Util.DebugPrint(DbgSub.UTIL, "Caught exception " + e);
+
+                return null;
+            }
+
+            if (bytesRead > 0) {
+                currentIndex += bytesRead;
+            }
+        }
+
+        return fileData;
+    }
+
+    public static boolean WriteFileData(String path, String filename, byte[] fileData) {
+        FileOutputStream outputStream;
+
+        try {
+            outputStream = new FileOutputStream(path + File.separator + filename);
+
+            outputStream.write(fileData);
+
+            outputStream.close();
+        } catch (Exception e) {
+            Util.DebugPrint(DbgSub.CHUNK_MANAGER, "Caught exception " + e);
+
+            return false;
+        }
+
+        return true;
+    }
 }
