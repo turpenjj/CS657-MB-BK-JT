@@ -3,6 +3,7 @@ package p2pclient;
 import java.io.*;
 import java.net.*;
 import java.util.Random;
+import java.util.Arrays;
 
 /**
  *
@@ -16,10 +17,12 @@ public class ComponentTester {
          * then the higher-level components.
          */
 
+        if (ComponentTesterConfig.TEST_SEND_RECEIVE_LARGE_MESSAGES) {
+            TestSendReceiveLargeMessages();
+        }
         if (ComponentTesterConfig.TEST_HOST) {
             TestHost();
         }
-
         if (ComponentTesterConfig.TEST_LIST_REMOVAL_ALGORITHM) {
             TestListRemovalAlgorithm();
         }
@@ -65,6 +68,42 @@ public class ComponentTester {
         if (ComponentTesterConfig.TEST_TRACKER_WITH_REAL_SOCKETS) {
             TestTrackerWithRealSockets();
         }
+    }
+
+    private static void TestSendReceiveLargeMessages() throws Exception {
+        PacketType[] acceptedPeerPacketTypes = {PacketType.CHUNK_RESPONSE};
+        MessageReceive messageReceive = new MessageReceive(acceptedPeerPacketTypes, true);
+        MessageSend messageSend = new MessageSend();
+        Peer[] peer = new Peer[1];
+        PacketType[] packetType = new PacketType[1];
+        int[] sessionID = new int[1];
+        byte[] messageData;
+        byte[] data = new byte[5000];
+        Random rand = new Random();
+        Peer ourListener = new Peer(InetAddress.getLocalHost(), messageReceive.listeningPort);
+        
+        messageReceive.start();
+
+        rand.nextBytes(data);
+
+        messageSend.SendCommunication(ourListener, PacketType.CHUNK_RESPONSE, 1, data);
+
+        Thread.sleep(1000);
+
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "About to call GetMessage");
+        messageData = messageReceive.GetMessage(1, acceptedPeerPacketTypes, peer, packetType, sessionID);
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Returned from call to GetMessage");
+        if (messageData != null) {
+            if (Arrays.equals(messageData,data)) {
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Sent and received a " + data.length + " byte message");
+            } else {
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Received message did not match sent message");
+            }
+        } else {
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed to receive message");
+        }
+
+        messageReceive.Stop();
     }
     
     private static void TestTrackerWithRealSockets() throws Exception {

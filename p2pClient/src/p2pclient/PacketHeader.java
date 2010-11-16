@@ -14,6 +14,7 @@ public class PacketHeader  {
     PacketType packetType;
     int totalSize; //NOT including the packet header(s)
     int offset;
+    public static int PACKET_HEADER_SIZE = 16; // sessionID (4) + packetType (4) + totalSize (4) + offset (4)
 
     PacketHeader(int sID, PacketType pT, int ts, int off) {
         sessionID = sID;
