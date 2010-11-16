@@ -287,15 +287,16 @@ public class ConfigurationDialog extends javax.swing.JFrame {
         } else {
             torrentDir = new File(DirectoryEntry.getText());
             portNumber = ((Number)(Integer.parseInt(PortNumberEntry.getText()))).intValue();
+            TrackerIp = (TrackerIPField.getText());
             maxDownloads = MaxDownloadSelect.getValue();
             maxUploads = MaxUploadSelect.getValue();
             this.setVisible(false);
             GUI.getInstance().updateHostedFiles(torrentDir);
 
             if (YesButton.isSelected()) {
-                GUI.getInstance().InitializeHost(torrentDir, portNumber);
+                GUI.getInstance().InitializeHost(torrentDir, portNumber, TrackerIp, true);
             } else {
-                GUI.getInstance().InitializeHost(torrentDir, portNumber, TrackerIp);
+                GUI.getInstance().InitializeHost(torrentDir, portNumber, TrackerIp, false);
             }
         }
     }//GEN-LAST:event_OKButtonActionPerformed

@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.logging.Level;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
@@ -203,30 +204,43 @@ public class GUI extends javax.swing.JFrame {
      *   Initializes the Host instance.  The GUI uses the host to get information
      *   from the outside, to perform search/get search results, and to start downloads
      */
-    public void InitializeHost(File torrentDir, int portNumber) {
+    public void InitializeHost(File torrentDir, int portNumber, String trackerIp, boolean isTracker) {
         if ( host == null ) {
-            host = new Host(portNumber, torrentDir.toString());
+            try {
+                host = new Host(portNumber, torrentDir.toString(), trackerIp);
+                host.start();
+            } catch (UnknownHostException ex) {
+                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+            }
         } else {
             //host.UpdateConfiguration(torrentDir, portNumber);
         }
 
-        tracker = new Tracker(portNumber);
+        if ( isTracker ) {
+            tracker = new Tracker(Tracker.TRACKER_LISTENING_PORT);
+            tracker.start();
+        }
     }
 
-    /*
-     * Description:
-     *   Initializes the Host instance.  The GUI uses the host to get information
-     *   from the outside, to perform search/get search results, and to start downloads
-     */
-    public void InitializeHost(File torrentDir, int portNumber, String trackerIp) {
-        if ( host == null ) {
-            host = new Host(portNumber, torrentDir.toString());
-        } else {
-            //host.UpdateConfiguration(torrentDir, portNumber);
-        }
-        // Remove the Tracker Tab
-        jTabbedPane1.remove(4);
-    }
+//    /*
+//     * Description:
+//     *   Initializes the Host instance.  The GUI uses the host to get information
+//     *   from the outside, to perform search/get search results, and to start downloads
+//     */
+//    public void InitializeHost(File torrentDir, int portNumber, String trackerIp, boolean isTracker) {
+//        if ( host == null ) {
+//            try {
+//                host = new Host(portNumber, torrentDir.toString(), trackerIp, isTracker);
+//                host.start();
+//            } catch (UnknownHostException ex) {
+//                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//        } else {
+//            //host.UpdateConfiguration(torrentDir, portNumber);
+//        }
+//        // Remove the Tracker Tab
+//        jTabbedPane1.remove(4);
+//    }
 
     /*
      * Description:
@@ -274,7 +288,7 @@ public class GUI extends javax.swing.JFrame {
                 RegisteredPeer[] peers = tracker.registeredPeers.registeredPeers;
                 index = RegisteredPeersList.getSelectedIndex();
 
-                if ( peers[0] != null ) {
+                if ( peers != null && peers[0] != null ) {
                     list = new DefaultListModel();
                     RegisteredPeersList.removeAll();
                     for (int i = 0; i < peers.length; i++) {
