@@ -26,9 +26,10 @@ public class Host implements Runnable{
         runner = null;
         listeningPort = servingClientListeningPort;
         shareFolder = directory;
-        chunkManagers = new ChunkManager[2];
-        chunkManagers[0] = new ChunkManager("fu");
-        chunkManagers[1] = new ChunkManager("man");
+        chunkManagers = PopulateChunkManagers();
+//        chunkManagers = new ChunkManager[2];
+//        chunkManagers[0] = new ChunkManager("fu");
+//        chunkManagers[1] = new ChunkManager("man");
         servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
 
     }
@@ -173,20 +174,66 @@ public class Host implements Runnable{
         return null;
     }
 
-    private void AddFilesFromDirectory(String directory) {
+    private synchronized ChunkManager[] PopulateChunkManagers() {
+        String[] filesToTorrent = GetTorrentFilesFromDirectory(shareFolder);
+        ChunkManager[] storedChunkManagers = new ChunkManager[filesToTorrent.length];
+
+        int managerIndex = 0;
+        for ( String torrentFile : filesToTorrent ) {
+            Torrent tempTorrent = null;
+            try {
+                tempTorrent = new Torrent(shareFolder, torrentFile);
+            } catch ( Exception e ) {
+                Util.DebugPrint(DbgSub.HOST, e);
+            }
+            storedChunkManagers[managerIndex++] = CreateChunkManagerFromTorrent(shareFolder, torrentFile, tempTorrent);
+        }
+        Util.DebugPrint(DbgSub.HOST, "Loaded " + storedChunkManagers.length + " torrents");
+        return storedChunkManagers;
+    }
+
+    private synchronized ChunkManager CreateChunkManagerFromTorrent(String path, String filename, Torrent torrent) {
+        try {
+            File file = new File(path + filename);
+            FileInputStream fileInputStream = new FileInputStream(file);
+            byte[] byteBuffer = new byte[torrent.CHUNK_SIZE];
+            int bytesRead;
+
+            ChunkManager chunkManager = new ChunkManager(torrent.filename);
+            chunkManager.chunkList = new FileChunk[torrent.numChunks];
+            for ( int i = 0; i < torrent.numChunks; i++ ) {
+                bytesRead = fileInputStream.read(byteBuffer);
+                chunkManager.chunkList[i] = new FileChunk(torrent.chunks[i].chunkNumber, torrent.chunks[i].hash, torrent.chunks[i].status, null);
+                chunkManager.chunkList[i].chunk = new byte[bytesRead];
+                System.arraycopy(byteBuffer, 0, chunkManager.chunkList[i].chunk, 0, bytesRead);
+                chunkManager.chunkList[i].chunkInfo = torrent.chunks[i];
+            }
+            return chunkManager;
+        } catch ( IOException e ) {
+        }
+        return null;
+    }
+
+    /*
+     * This will return all the *.torrent files in the directory
+     */
+    private String[] GetTorrentFilesFromDirectory(String directory) {
         File dir = new File(directory);
         FileFilter filter = new RealFileFilter();
-        if (dir != null && dir.exists() && dir.isDirectory()) {
+        if ( dir != null && dir.exists() && dir.isDirectory() ) {
             File[] files = dir.listFiles(filter);
             String[] filenames = new String[0];
             String[] temp;
 
-            for (File file : files) {
+            for ( File file : files ) {
+                Util.DebugPrint(DbgSub.HOST, "Read in file for torrent" + file.getName());
                 temp = new String[1 + filenames.length];
                 temp[0] = file.getName();
                 System.arraycopy(filenames, 0, temp, 1, filenames.length);
                 filenames = temp;
             }
+            return filenames;
         }
+        return null;
     }
 }

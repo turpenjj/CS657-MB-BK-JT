@@ -16,6 +16,10 @@ public class ComponentTester {
          * then the higher-level components.
          */
 
+        if (ComponentTesterConfig.TEST_HOST) {
+            TestHost();
+        }
+
         if (ComponentTesterConfig.TEST_LIST_REMOVAL_ALGORITHM) {
             TestListRemovalAlgorithm();
         }
@@ -420,6 +424,10 @@ public class ComponentTester {
 
     private static void TestTorrent() throws Exception {
         Torrent torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile.txt");
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "chunk hashes: " + Util.ConvertToHex(torrent.chunks[0].hash) + " " +
+                Util.ConvertToHex(torrent.chunks[1].hash) + " " + Util.ConvertToHex(torrent.chunks[2].hash) + " " +
+                Util.ConvertToHex(torrent.chunks[3].hash) + " " );
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, torrent.toString());
     }
 
     private static void TestTrackerRegistrationImportExport() throws Exception {
@@ -673,6 +681,10 @@ public class ComponentTester {
                 ", chunkNumber = " + responseImport.chunkNumber +
                 ", chunkData (" + responseImport.chunkData.length + ")" +
                 ", messageData (" + messageData.length + ")");
+    }
+
+    private static void TestHost() {
+        Host newHost = new Host(13454, ComponentTesterConfig.TEST_FILE_PATH_ROOT);
     }
 
     private static void TestServingClient() {

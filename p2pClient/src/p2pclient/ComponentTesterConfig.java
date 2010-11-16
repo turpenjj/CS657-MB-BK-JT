@@ -10,7 +10,7 @@ public class ComponentTesterConfig {
     
     public static boolean TEST_LIST_REMOVAL_ALGORITHM = false;
     public static boolean TEST_UTIL_EXTRACT_NULL_TERMINATED_STRING = false;
-    public static boolean TEST_TORRENT = false;
+    public static boolean TEST_TORRENT = true;
     public static boolean TEST_TRACKER_REGISTRATION_IMPORT_EXPORT = false;
     public static boolean TEST_TRACKER_QUERY_IMPORT_EXPORT = false;
     public static boolean TEST_TRACKER_QUERY_RESPONSE_IMPORT_EXPORT = false;
@@ -23,8 +23,9 @@ public class ComponentTesterConfig {
     public static boolean TEST_CHUNK_REQUEST_IMPORT_EXPORT = false;
     public static boolean TEST_CHUNK_RESPONSE_IMPORT_EXPORT = false;
     public static boolean TEST_SERVING_CLIENT = false;
+    public static boolean TEST_HOST = true;
 
-    public static boolean TEST_TRACKER_WITH_REAL_SOCKETS = true;
+    public static boolean TEST_TRACKER_WITH_REAL_SOCKETS = false;
 
     public static boolean[] DebugLevels = {
         true, //    ALL,
@@ -38,7 +39,7 @@ public class ComponentTesterConfig {
         false, //    FILE_CHUNK,
         false, //    FILE_RECEIVER,
         false, //    FILE_SENDER,
-        false, //    HOST,
+        true, //    HOST,
         false, //    LIST_OF_FILES,
         false, //    MESSAGE_BUFFER,
         false, //    MESSAGE_RECEIVE,
