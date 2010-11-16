@@ -2,6 +2,7 @@ package p2pclient;
 
 import java.io.*;
 import java.net.*;
+import java.util.Random;
 
 /**
  *
@@ -10,11 +11,11 @@ import java.net.*;
 public class ComponentTester {
     
     public static void main (String args[]) throws Exception {
-
         /**
          * NOTE: try to test all the simplest pieces first, the the subcomponents,
          * then the higher-level components.
          */
+
         if (ComponentTesterConfig.TEST_LIST_REMOVAL_ALGORITHM) {
             TestListRemovalAlgorithm();
         }
@@ -57,6 +58,106 @@ public class ComponentTester {
         if (ComponentTesterConfig.TEST_SERVING_CLIENT) {
             TestServingClient();
         }
+        if (ComponentTesterConfig.TEST_TRACKER_WITH_REAL_SOCKETS) {
+            TestTrackerWithRealSockets();
+        }
+    }
+    
+    private static void TestTrackerWithRealSockets() throws Exception {
+        Tracker tracker = new Tracker(Tracker.TRACKER_LISTENING_PORT);
+        PacketType[] acceptedPeerPacketTypes = {
+            PacketType.CHUNK_LIST_REQUEST, PacketType.CHUNK_REQUEST};
+        PacketType[] acceptedTrackerResponsePacketTypes = {
+            PacketType.TRACKER_QUERY_RESPONSE, PacketType.TRACKER_TORRENT_RESPONSE};
+        Peer[] receivedPeer = new Peer[1];
+        PacketType[] receivedPacketType = new PacketType[1];
+        int[] receivedSessionId = new int[1];
+        byte[] receivedMessageData;
+        TrackerRegistration trackerRegistration;
+        tracker.start();
+        Peer trackerPeer = new Peer(InetAddress.getLocalHost(), Tracker.TRACKER_LISTENING_PORT);
+        Random random = new Random();
+        MessageSend messageSender = new MessageSend();
+        MessageReceive messageReceive;
+        MessageReceive queryMessageReceive;
+        TrackerQuery trackerQuery;
+        TrackerQueryResponse trackerQueryResponse;
+        TrackerTorrentRegistration torrentRegistration;
+        Torrent torrent;
+        TrackerTorrentQuery trackerTorrentQuery;
+        TrackerTorrentResponse trackerTorrentResponse;
+        int sessionId;
+        int numFiles;
+        int fileNum;
+
+        for (int i = 0; i < 20; i++) {
+            trackerRegistration = new TrackerRegistration(Util.GetRandomHighPort(random));
+            messageReceive = new MessageReceive(trackerRegistration.peer.listeningPort, acceptedPeerPacketTypes, true);
+            messageReceive.start();
+
+            trackerRegistration.AddFilesFromDirectory(ComponentTesterConfig.TEST_FILE_PATH_ROOT);
+            messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_REGISTRATION, random.nextInt(), trackerRegistration.ExportMessagePayload());
+            
+            for (String file : trackerRegistration.registeredPeers[0].files) {
+                sessionId = random.nextInt();
+                torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, file);
+                torrentRegistration = new TrackerTorrentRegistration(torrent);
+                messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_TORRENT_REGISTRATION, sessionId, torrentRegistration.ExportMessagePayload());
+            }
+
+            for (String file : trackerRegistration.registeredPeers[0].files) {
+                queryMessageReceive = new MessageReceive(Util.GetRandomHighPort(random), acceptedTrackerResponsePacketTypes, false);
+                queryMessageReceive.start();
+                trackerTorrentQuery = new TrackerTorrentQuery(file, queryMessageReceive.listeningPort);
+                sessionId = random.nextInt();
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Sending TRACKER_TORRENT_QUERY message: Session = " + sessionId + "; Destination = " + trackerPeer.clientIp + ":" + trackerPeer.listeningPort + "; File = " + file + "; Response Expected Port =  " + queryMessageReceive.listeningPort);
+                messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_TORRENT_QUERY, sessionId, trackerTorrentQuery.ExportQuery());
+
+                Thread.sleep(200);
+
+                receivedMessageData = queryMessageReceive.GetMessage(sessionId, acceptedTrackerResponsePacketTypes, receivedPeer, receivedPacketType, receivedSessionId);
+                if (receivedMessageData != null) {
+                    trackerTorrentResponse = new TrackerTorrentResponse();
+                    trackerTorrentResponse.ImportMessagePayload(receivedMessageData);
+                    
+                    Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Received TRACKER_TORRENT_RESPONSE (session " + sessionId + ")");
+                    Util.DebugPrint(DbgSub.COMPONENT_TESTER, trackerTorrentResponse.torrent.toString());
+
+                    queryMessageReceive.Stop();
+                } else {
+                    Util.DebugPrint(DbgSub.COMPONENT_TESTER, "FAILED to receive TRACKER_TORRENT_RESPONSE (session " + sessionId + ")");
+                    queryMessageReceive.Stop();
+                }
+            }
+            Thread.sleep(10000);
+
+            numFiles = trackerRegistration.registeredPeers[0].files.length;
+            fileNum = random.nextInt(numFiles);
+            String file = trackerRegistration.registeredPeers[0].files[fileNum];
+            queryMessageReceive = new MessageReceive(Util.GetRandomHighPort(random), acceptedTrackerResponsePacketTypes, false);
+            queryMessageReceive.start();
+            trackerQuery = new TrackerQuery(file, queryMessageReceive.listeningPort);
+            sessionId = random.nextInt();
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Sending TRACKER_QUERY message: Session = " + sessionId + "; Destination = " + trackerPeer.clientIp + ":" + trackerPeer.listeningPort + "; File = " + file + "; Response Expected Port =  " + queryMessageReceive.listeningPort);
+            messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_QUERY, sessionId, trackerQuery.ExportQuery());
+
+            Thread.sleep(1000);
+
+            receivedMessageData = queryMessageReceive.GetMessage(sessionId, acceptedTrackerResponsePacketTypes, receivedPeer, receivedPacketType, receivedSessionId);
+            if (receivedMessageData != null) {
+                trackerQueryResponse = new TrackerQueryResponse();
+                trackerQueryResponse.ImportResponse(receivedMessageData);
+
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Received TRACKER_RESPONSE (session " + sessionId + ")");
+                for (Peer listPeer : trackerQueryResponse.peerList) {
+                    Util.DebugPrint(DbgSub.COMPONENT_TESTER, listPeer.clientIp + ":" + listPeer.listeningPort);
+                }
+                queryMessageReceive.Stop();
+            } else {
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "FAILED to receive TRACKER_RESPONSE (session " + sessionId + ")");
+                queryMessageReceive.Stop();
+            }
+        }
     }
 
     private static void TestListRemovalAlgorithm() {
@@ -74,9 +175,9 @@ public class ComponentTester {
                     IsIntegerInList(3, retList) &&
                     IsIntegerInList(4, retList) &&
                     IsIntegerInList(5, retList) ) ) {
-            System.out.println("Error: Failed removing first element in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed removing first element in list");
         } else {
-            System.out.println("Success: Removed first element in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Removed first element in list");
         }
 
         Integer[] listRemoveLast = {5};
@@ -89,9 +190,9 @@ public class ComponentTester {
                     IsIntegerInList(2, retList) &&
                     IsIntegerInList(3, retList) &&
                     IsIntegerInList(4, retList) ) ) {
-            System.out.println("Error: Failed removing last element in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed removing last element in list");
         } else {
-            System.out.println("Success: Removed last element in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Removed last element in list");
         }
 
         Integer[] listRemoveMiddle = {3};
@@ -104,18 +205,18 @@ public class ComponentTester {
                     IsIntegerInList(2, retList) &&
                     IsIntegerInList(4, retList) &&
                     IsIntegerInList(5, retList) ) ) {
-            System.out.println("Error: Failed removing middle element in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed removing middle element in list");
         } else {
-            System.out.println("Success: Removed middle element in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Removed middle element in list");
         }
 
         Integer[] listRemoveAll = list.clone();
         removeList = listRemoveAll;
         retList = RemoveFromList(list, removeList);
         if ( retList.length != list.length - removeList.length ) {
-            System.out.println("Error: Failed removing all elements in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed removing all elements in list");
         } else {
-            System.out.println("Success: Removed all elements in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Removed all elements in list");
         }
 
         Integer[] listRemoveFirstAndLast = {0, 5};
@@ -128,9 +229,9 @@ public class ComponentTester {
                     IsIntegerInList(2, retList) &&
                     IsIntegerInList(3, retList) &&
                     IsIntegerInList(4, retList) ) ) {
-            System.out.println("Error: Failed removing first and last element in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed removing first and last element in list");
         } else {
-            System.out.println("Success: Removed first and last element in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Removed first and last element in list");
         }
 
         Integer[] listRemoveDisparate = {1, 2, 4};
@@ -143,9 +244,9 @@ public class ComponentTester {
                 !(  IsIntegerInList(0, retList) &&
                     IsIntegerInList(3, retList) &&
                     IsIntegerInList(5, retList) ) ) {
-            System.out.println("Error: Failed removing disparate elements in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed removing disparate elements in list");
         } else {
-            System.out.println("Success: Removed disparate elements in list");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Removed disparate elements in list");
         }
     }
 
@@ -191,9 +292,9 @@ public class ComponentTester {
         TrackerTorrentResponse ttqr = new TrackerTorrentResponse(torrent);
         byte[] messageData = ttqr.ExportMessagePayload();
         if (messageData != null) {
-            System.out.println("Success: TrackerTorrentResponse::ExportMessagePayload succeeded");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: TrackerTorrentResponse::ExportMessagePayload succeeded");
         } else {
-            System.out.println("Error: TrackerTorrentResponse::ExportMessagePayload failed");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: TrackerTorrentResponse::ExportMessagePayload failed");
         }
 
         TrackerTorrentResponse ttqrImport = new TrackerTorrentResponse();
@@ -202,9 +303,9 @@ public class ComponentTester {
                 ttqrImport.torrent.filename.contentEquals(torrent.filename) &&
                 ttqrImport.torrent.filesize == torrent.filesize &&
                 ttqrImport.torrent.numChunks == torrent.numChunks) {
-            System.out.println("Success: TrackerTorrentResponse::ImportMessagePayload succeeded");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: TrackerTorrentResponse::ImportMessagePayload succeeded");
         } else {
-            System.out.println("Error: TrackerTorrentResponse::ImportMessagePayload succeeded");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: TrackerTorrentResponse::ImportMessagePayload succeeded");
         }
     }
 
@@ -221,17 +322,17 @@ public class ComponentTester {
         
         byte[] messageData = trackerTorrentQuery.ExportQuery();
 
-        System.out.println("Filename = " + trackerTorrentQuery.filename +
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + trackerTorrentQuery.filename +
                 ", listeningPort = " + trackerTorrentQuery.listeningPort +
                 ", messageData (" + messageData.length + ")");
 
         TrackerTorrentQuery trackerTorrentQueryImport = new TrackerTorrentQuery();
 
         if (trackerTorrentQueryImport.ImportQuery(messageData)) {
-            System.out.println("Import reported success: Filename = " + trackerTorrentQueryImport.filename +
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Import reported success: Filename = " + trackerTorrentQueryImport.filename +
                     ", listeningPort = " + trackerTorrentQueryImport.listeningPort);
         } else {
-            System.out.println("Import reported failure");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Import reported failure");
         }
     }
 
@@ -284,36 +385,36 @@ public class ComponentTester {
         tracker = trackerRegisteredTorrents[0];
 
         if (tracker.Search(torrents[0].filename) != null) {
-            System.out.println("Success: Found file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Found file");
         } else {
-            System.out.println("Error: Failed to find file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed to find file");
         }
         if (tracker.Search(torrents[1].filename) != null) {
-            System.out.println("Success: Found file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Found file");
         } else {
-            System.out.println("Error: Failed to find file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed to find file");
         }
         if (tracker.Search(torrents[1].filename.toLowerCase()) != null) {
-            System.out.println("Success: Found file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Found file");
         } else {
-            System.out.println("Error: Failed to find file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed to find file");
         }
         if (tracker.Search("UnregisteredFile") == null) {
-            System.out.println("Success: Didn't find file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Didn't find file");
         } else {
-            System.out.println("Error: Found file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Found file");
         }
 
         tracker.DeregisterTorrent(torrents[0]);
         if (tracker.Search(torrents[0].filename) == null) {
-            System.out.println("Success: Didn't find file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Didn't find file");
         } else {
-            System.out.println("Error: Found file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Found file");
         }
         if (tracker.Search(torrents[1].filename) != null) {
-            System.out.println("Success: Found file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Found file");
         } else {
-            System.out.println("Error: Failed to find file");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Failed to find file");
         }
     }
 
@@ -330,9 +431,9 @@ public class ComponentTester {
 
         messageData = trackerRegistration.ExportMessagePayload();
         if (messageData != null) {
-            System.out.println("TestTrackerRegistration: ExportMessagePayload succeeded");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "TestTrackerRegistration: ExportMessagePayload succeeded");
         } else {
-            System.out.println("TestTrackerRegistration: ExportMessagePayload failed");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "TestTrackerRegistration: ExportMessagePayload failed");
         }
 
         TrackerRegistration trackerRegistration2 = new TrackerRegistration(50123);
@@ -342,9 +443,9 @@ public class ComponentTester {
 
         messageData2 = trackerRegistration2.ExportMessagePayload();
         if (messageData2 != null) {
-            System.out.println("TestTrackerRegistration: ExportMessagePayload succeeded");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "TestTrackerRegistration: ExportMessagePayload succeeded");
         } else {
-            System.out.println("TestTrackerRegistration: ExportMessagePayload failed");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "TestTrackerRegistration: ExportMessagePayload failed");
         }
 
         TrackerRegistration trackerRegistrationImport = new TrackerRegistration();
@@ -366,19 +467,19 @@ public class ComponentTester {
 
         peers = trackerRegistrationImport.Search("Test1");
         if (peers != null && peers.length != 0) {
-            System.out.println("Error: 'Test' test set should have timed out");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: 'Test' test set should have timed out");
         } else {
-            System.out.println("Success: 'Test' set timed out");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: 'Test' set timed out");
         }
         peers = trackerRegistrationImport.Search("Set1");
         if (peers == null || peers.length == 0) {
-            System.out.println("Error: 'Set' test set should still be present");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: 'Set' test set should still be present");
         } else {
             if (peers[0].clientIp.equals(peer2.clientIp) &&
                     peers[0].listeningPort == trackerRegistration2.peer.listeningPort) {
-                System.out.println("Success: Found 'Set1' file from the correct host");
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Found 'Set1' file from the correct host");
             } else {
-                System.out.println("Error: Found 'Set1' file but from incorrect host");
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Found 'Set1' file but from incorrect host");
             }
         }
 
@@ -389,24 +490,24 @@ public class ComponentTester {
 
         peers = trackerRegistrationImport.Search("Test4");
         if (peers == null || peers.length == 0) {
-            System.out.println("Error: 'Test' test set should still be present");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: 'Test' test set should still be present");
         } else {
             if (peers[0].clientIp.equals(peer1.clientIp) &&
                     peers[0].listeningPort == trackerRegistration.peer.listeningPort) {
-                System.out.println("Success: Found 'Test4' file from the correct host");
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Found 'Test4' file from the correct host");
             } else {
-                System.out.println("Error: Found 'Test4' file but from incorrect host");
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Found 'Test4' file but from incorrect host");
             }
         }
         peers = trackerRegistrationImport.Search("Set1");
         if (peers != null && peers.length == 0) {
-            System.out.println("Error: 'Set' test set should still be present");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: 'Set' test set should still be present");
         } else {
             if (peers[0].clientIp.equals(peer2.clientIp) &&
                     peers[0].listeningPort == trackerRegistration2.peer.listeningPort) {
-                System.out.println("Success: Found 'Set1' file from the correct host");
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Success: Found 'Set1' file from the correct host");
             } else {
-                System.out.println("Error: Found 'Set1' file but from incorrect host");
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Error: Found 'Set1' file but from incorrect host");
             }
         }
 
@@ -421,17 +522,17 @@ public class ComponentTester {
         TrackerQuery trackerQuery = new TrackerQuery(filename, listeningPort);
         byte[] messageData = trackerQuery.ExportQuery();
 
-        System.out.println("Filename = " + trackerQuery.filename +
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + trackerQuery.filename +
                 ", listeningPort = " + trackerQuery.listeningPort +
                 ", messageData (" + messageData.length + ")");
 
         TrackerQuery trackerQueryImport = new TrackerQuery();
 
         if (trackerQueryImport.ImportQuery(messageData)) {
-            System.out.println("Import reported success: Filename = " + trackerQueryImport.filename +
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Import reported success: Filename = " + trackerQueryImport.filename +
                     ", listeningPort = " + trackerQueryImport.listeningPort);
         } else {
-            System.out.println("Import reported failure");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Import reported failure");
         }
     }
 
@@ -459,15 +560,15 @@ public class ComponentTester {
 
         trackerQueryResponseImport = new TrackerQueryResponse();
         if (trackerQueryResponseImport.ImportResponse(messageData)) {
-            System.out.println("TrackerQueryReponse:Import reported success");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "TrackerQueryReponse:Import reported success");
 
             i = 0;
             for (Peer peer : trackerQueryResponseImport.peerList) {
-                System.out.println(i + ": IP = " + peer.clientIp + "; Port = " + peer.listeningPort);
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, i + ": IP = " + peer.clientIp + "; Port = " + peer.listeningPort);
                 i++;
             }
         } else {
-            System.out.println("TrackerQueryReponse:Import failed");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "TrackerQueryReponse:Import failed");
         }
 
     }
@@ -482,11 +583,11 @@ public class ComponentTester {
 
         for (i = 0; i < 3; i++) {
             if ((string = Util.ExtractNullTerminatedString(test2bytes, currentIndex, nextIndex)) != null) {
-                System.out.println("Iteration " + i + ": String = " + string +
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Iteration " + i + ": String = " + string +
                         "; currentIndex = " + currentIndex + "; nextIndex = " + nextIndex[0]);
                 currentIndex = nextIndex[0];
             } else {
-                System.out.println("Iteration " + i + ": NULL");
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Iteration " + i + ": NULL");
             }
         }
     }
@@ -497,14 +598,14 @@ public class ComponentTester {
         ChunkListRequest request = new ChunkListRequest(filename, listeningPort);
         byte[] messageData = request.ExportMessagePayload();
 
-        System.out.println("Filename = " + request.filename +
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + request.filename +
                 ", listeningPort = " + request.receivingPort +
                 ", messageData (" + messageData.length + ")");
         ChunkListRequest requestImport = new ChunkListRequest();
 
         requestImport.ImportMessagePayload(messageData);
 
-        System.out.println("Filename = " + requestImport.filename +
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + requestImport.filename +
                 ", listeningPort = " + requestImport.receivingPort +
                 ", messageData (" + messageData.length + ")");
     }
@@ -518,17 +619,18 @@ public class ComponentTester {
         }
         ChunkListResponse response = new ChunkListResponse(filename, chunkInfoList);
         byte[] messageData = response.ExportMessagePayload();
-        System.out.println("Filename = " + response.filename);
+
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + response.filename);
         for (int i = 0; i < response.chunkList.length; i++) {
-            System.out.println("chunk[" + i + "]");
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "chunk[" + i + "]");
         }
         ChunkListResponse responseImport = new ChunkListResponse();
 
         responseImport.ImportMessagePayload(messageData);
 
-        System.out.println("Filename = " + responseImport.filename);
-        for (int i = 0; i < responseImport.chunkList.length; i++) {
-            System.out.println("chunk[" + i + "]");
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + response.filename);
+        for (int i = 0; i < response.chunkList.length; i++) {
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "chunk[" + i + "]");
         }
     }
 
@@ -539,14 +641,14 @@ public class ComponentTester {
         ChunkRequest request = new ChunkRequest(filename, chunkNumber, listeningPort);
         byte[] messageData = request.ExportMessagePayload();
 
-        System.out.println("Filename = " + request.filename +
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + request.filename +
                 ", listeningPort = " + request.listeningPort +
                 ", messageData (" + messageData.length + ")");
 
         ChunkRequest requestImport = new ChunkRequest();
         requestImport.ImportMessagePayload(messageData);
 
-        System.out.println("Filename = " + requestImport.filename +
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + requestImport.filename +
                 ", listeningPort = " + requestImport.listeningPort +
                 ", messageData (" + messageData.length + ")");
     }
@@ -559,7 +661,7 @@ public class ComponentTester {
         ChunkResponse response = new ChunkResponse(filename, chunkNumber, chunkData);
         byte[] messageData = response.ExportMessagePayload();
 
-        System.out.println("Filename = " + response.filename +
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + response.filename +
                 ", chunkNumber = " + response.chunkNumber +
                 ", chunkData (" + response.chunkData.length + ")" +
                 ", messageData (" + messageData.length + ")");
@@ -567,7 +669,7 @@ public class ComponentTester {
         ChunkResponse responseImport = new ChunkResponse();
         responseImport.ImportMessagePayload(messageData);
 
-        System.out.println("Filename = " + responseImport.filename +
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Filename = " + responseImport.filename +
                 ", chunkNumber = " + responseImport.chunkNumber +
                 ", chunkData (" + responseImport.chunkData.length + ")" +
                 ", messageData (" + messageData.length + ")");
@@ -605,17 +707,22 @@ public class ComponentTester {
 
         ServingClient servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
         servingClient.start();
+//        try {
+//            Thread.sleep(2000);
+//        } catch ( InterruptedException e ) {
+//
+//        }
 
         try {
             Peer dummyPeer = new Peer(InetAddress.getLocalHost(), 51515);
             peerManager.UpdatePeer(dummyPeer);
             Peer peer = new Peer(InetAddress.getLocalHost(), 54321);
-            RequestingClient requestingClient = new RequestingClient(peer, "Filename1", reqchunkManagers[1], peerManager);
+            RequestingClient requestingClient = new RequestingClient(peer, "Filename1", chunkManagers[1]);
             requestingClient.start();
         } catch ( UnknownHostException e ) {
-            System.out.println("We're in trouble... we can't find ourself " + e);
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "We're in trouble... we can't find ourself " + e);
         }
-//        System.out.println("peerList (" + peerManager.peerList.length + ")");
+//        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "peerList (" + peerManager.peerList.length + ")");
     }
 }
 
