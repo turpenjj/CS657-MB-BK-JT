@@ -52,7 +52,7 @@ public class TrackerRegistration {
     /*
      * Allows the tracker to search for a list of Peers that have chunks to the requested file.
      */
-    public Peer[] Search(String filename) {
+    public synchronized Peer[] Search(String filename) {
         Peer[] retList = null;
 
         RefreshLists();
@@ -69,7 +69,7 @@ public class TrackerRegistration {
         return retList;
     }
 
-    private Peer[] AddToPeerList(Peer[] list, Peer peer) {
+    private synchronized Peer[] AddToPeerList(Peer[] list, Peer peer) {
         Peer[] temp;
 
         if (list == null || list[0] == null) {
@@ -91,7 +91,7 @@ public class TrackerRegistration {
      * Adds files from the given directory to the list to be sent with a tracker registration message. Expected to be called by a client.
      * @param path Directory to search for files in
      */
-    public void AddFilesFromDirectory(String path) {
+    public synchronized void AddFilesFromDirectory(String path) {
         // TODO: remove this test code
         if (path.compareTo("Test") == 0) {
             String[] filenames = {"Test1", "Test2", "Test3", "Test4", "Test5"};
@@ -128,7 +128,7 @@ public class TrackerRegistration {
     /*
      * Processes the Tracker Registration message is it appears on the wire. Expected to be called by the tracker.
      */
-    public void ImportMessage(Peer peer, byte[] messageData) {
+    public synchronized void ImportMessage(Peer peer, byte[] messageData) {
         int currentIndex = 0;
         int[] nextIndex = {0};
         int numStrings = 0;
@@ -163,7 +163,7 @@ public class TrackerRegistration {
      *
      * @return bytestream of the registration message
      */
-    public byte[] ExportMessagePayload() {
+    public synchronized byte[] ExportMessagePayload() {
         String built = "";
         byte[] messageData;
         int currentIndex = 0;
@@ -186,7 +186,7 @@ public class TrackerRegistration {
         return messageData;
     }
 
-    private void AddPeer(Peer peer, String[] filenames) {
+    private synchronized void AddPeer(Peer peer, String[] filenames) {
         int i = 0;
         RegisteredPeer[] tempRegisteredPeers;
 
@@ -215,7 +215,7 @@ public class TrackerRegistration {
      * Updates the internal lists to remove list entries that have timed out.
      * Expected to be called by tracker-used functions.
      */
-    public void RefreshLists() {
+    public synchronized void RefreshLists() {
         // TODO: switch this function back to private once we are done using it for testing
         long currentTime = Util.GetCurrentTime();
         int currentIndex = 0;
@@ -240,7 +240,7 @@ public class TrackerRegistration {
         }
     }
 
-    public String toString() {
+    public synchronized String toString() {
         String string = "Registered Peers:\n";
 
         if (this.registeredPeers != null && this.registeredPeers.length != 0 && this.registeredPeers[0] != null) {
