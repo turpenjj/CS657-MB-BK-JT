@@ -9,16 +9,19 @@ package p2pgui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.net.InetAddress;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import p2pclient.ChunkInfo;
 import p2pclient.Host;
 import p2pclient.Peer;
+import p2pclient.RegisteredPeer;
+import p2pclient.Torrent;
+import p2pclient.Tracker;
 
 /**
  *
@@ -29,21 +32,27 @@ public class GUI extends javax.swing.JFrame {
     private static ConfigurationDialog config;
     private static GUI gui;
     private Host host;
+    private Tracker tracker;
     private String searchFileName;
     private Peer[] hostingPeers;
 
     private GUI()
     {
+        host = null;
+        tracker = null;
         config = new ConfigurationDialog();
         initComponents();
 
         DownloadFileList.addListSelectionListener(new DownloadFileListListener());
+        UploadFileList.addListSelectionListener(new UploadFileListListener());
+        RegisteredPeersList.addListSelectionListener(new RegisteredPeersListListener());
 
         // Initialize the timer to update download/upload progress
         int fire = 2000; //milliseconds
         timer = new Timer(fire, TimerUpdate);
         timer.setInitialDelay(5000);
         timer.start();
+
     }
 
     /*
@@ -61,39 +70,7 @@ public class GUI extends javax.swing.JFrame {
 
     /*
      * Description:
-     *   Initializes the Host instance.  The GUI uses the host to get information
-     *   from the outside, to perform search/get search results, and to start downloads
-     */
-    public void InitializeHost(File torrentDir, int portNumber) {
-        //host = new Host(portNumber, torrentDir.toString());
-    }
-
-    /*
-     * Description:
-     *   This Action Listener updates the downloaded and uploaded file list when
-     *   the timer fires.
-     */
-    ActionListener TimerUpdate = new ActionListener() {
-
-        public void actionPerformed(ActionEvent evt) {
-            //String[] files1 = host.GetCurrentDownloads();
-            String[] files = {"file1", "file2", "file3", "file4"};
-            int index = DownloadFileList.getSelectedIndex();
-
-            DefaultListModel list = new DefaultListModel();
-            DownloadFileList.removeAll();
-            for (int i = 0; i < files.length; i++) {
-                list.addElement(files[i]);
-            }
-            DownloadFileList.setModel(list);
-            DownloadFileList.setSelectedIndex(index);
-        }
-    };
-    private final Timer timer;
-
-    /*
-     * Description:
-     *   This Listener updates the downloaded and uploaded file and chunk list whenever
+     *   This Listener updates the downloaded file and chunk list whenever
      *   a new file is selected in the list by the user.
      *
      *   It also updates the chunk status and the total download progress for the file
@@ -105,16 +82,14 @@ public class GUI extends javax.swing.JFrame {
                 String file = (String) DownloadFileList.getSelectedValue();
 
                 if (file != null) {
-                    ChunkInfo[] chunks;// = host.GetFileChunkInfo(file);
-                    String[] chunk = {"chunk1", "chunk2", "chunk3", "chunk4", "chunk5", "chunk6"};
-                    int status[] = {0, 1, 2, 0, 1, 2};
+                    ChunkInfo[] chunks = host.GetFileChunkInfo(file);
+
                     float totalAvailable = 0;
-                    //DefaultTableModel model = new DefaultTableModel();
                     DefaultTableModel model = (DefaultTableModel)DownloadChunks.getModel();
                     model.setRowCount(0);
-                    for (int i = 0; i < chunk.length; i++) {
+                    for (int i = 0; i < chunks.length; i++) {
                         String state = null;
-                        switch(status[i]) {
+                        switch(chunks[i].status) {
                             case 0:
                                 state = "Missing";
                                 break;
@@ -123,18 +98,16 @@ public class GUI extends javax.swing.JFrame {
                                 break;
                             case 2:
                                 state = "Available";
+                                totalAvailable++;
                                 break;
                             default:
                                 break;
                         }
-                        model.addRow(new Object[]{chunk[i], state, "10.3.5.64"});
-                        if ( status[i] == 2 ) {
-                            totalAvailable++;
-                        }
+                        model.addRow(new Object[]{chunks[i].chunkNumber, state, chunks[i].receivedFrom.clientIp});
                     }
                     DownloadChunks.setModel(model);
 
-                    int percentComplete = (int) ((totalAvailable/chunk.length) * 100);
+                    int percentComplete = (int) ((totalAvailable/chunks.length) * 100);
                     FileDownloadProgress.setValue(percentComplete);
                     FileDownloadProgress.setString(String.valueOf(percentComplete) + "%");
                     FileDownloadProgress.setStringPainted(true);
@@ -142,6 +115,186 @@ public class GUI extends javax.swing.JFrame {
             }
         }
     }
+
+    /*
+     * Description:
+     *   This Listener updates the uploaded file and chunk list whenever
+     *   a new file is selected in the list by the user.
+     *
+     *   It also updates the chunk status and the total download progress for the file
+     */
+    class UploadFileListListener implements ListSelectionListener {
+
+        public void valueChanged(ListSelectionEvent e) {
+            if (e.getValueIsAdjusting() == false) {
+                String file = (String) UploadFileList.getSelectedValue();
+
+                if (file != null) {
+                    ChunkInfo[] chunks = host.GetFileChunkInfo(file);
+
+                    float totalAvailable = 0;
+                    DefaultTableModel model = (DefaultTableModel)UploadChunks.getModel();
+                    model.setRowCount(0);
+                    for (int i = 0; i < chunks.length; i++) {
+                        String state = null;
+                        switch(chunks[i].status) {
+                            case 0:
+                                state = "Missing";
+                                break;
+                            case 1:
+                                state = "Download in Progress";
+                                break;
+                            case 2:
+                                state = "Available";
+                                totalAvailable++;
+                                break;
+                            default:
+                                break;
+                        }
+                        model.addRow(new Object[]{chunks[i].chunkNumber, state, chunks[i].receivedFrom.clientIp});
+                    }
+                    UploadChunks.setModel(model);
+
+                    int percentComplete = (int) ((totalAvailable/chunks.length) * 100);
+                    FileUploadProgress.setValue(percentComplete);
+                    FileUploadProgress.setString(String.valueOf(percentComplete) + "%");
+                    FileUploadProgress.setStringPainted(true);
+                }
+            }
+        }
+    }
+
+    /*
+     * Description:
+     *   This Listener updates the uploaded file and chunk list whenever
+     *   a new file is selected in the list by the user.
+     *
+     *   It also updates the chunk status and the total download progress for the file
+     */
+    class RegisteredPeersListListener implements ListSelectionListener {
+
+        public void valueChanged(ListSelectionEvent e) {
+            if (e.getValueIsAdjusting() == false) {
+                String peer = (String) RegisteredPeersList.getSelectedValue();
+                
+                if ( peer != null ) {
+                    RegisteredPeer[] peers = tracker.registeredPeers.registeredPeers;
+                    for (int i = 0; i < peers.length; i++) {
+                        if ( peers[i].peer.clientIp.toString().equals(peer) ) {
+                            String[] files = peers[i].files;
+                            DefaultTableModel model = (DefaultTableModel) RegisteredPeersTable.getModel();
+                            model.setRowCount(0);
+                            for (i = 0; i < files.length; i++) {
+                                model.addRow(new Object[]{files[i]});
+                            }
+                            RegisteredPeersTable.setModel(model);
+                            break;
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    /*
+     * Description:
+     *   Initializes the Host instance.  The GUI uses the host to get information
+     *   from the outside, to perform search/get search results, and to start downloads
+     */
+    public void InitializeHost(File torrentDir, int portNumber) {
+        if ( host == null ) {
+            host = new Host(portNumber, torrentDir.toString());
+        } else {
+            //host.UpdateConfiguration(torrentDir, portNumber);
+        }
+
+        tracker = new Tracker(portNumber);
+    }
+
+    /*
+     * Description:
+     *   Initializes the Host instance.  The GUI uses the host to get information
+     *   from the outside, to perform search/get search results, and to start downloads
+     */
+    public void InitializeHost(File torrentDir, int portNumber, String trackerIp) {
+        if ( host == null ) {
+            host = new Host(portNumber, torrentDir.toString());
+        } else {
+            //host.UpdateConfiguration(torrentDir, portNumber);
+        }
+        // Remove the Tracker Tab
+        jTabbedPane1.remove(4);
+    }
+
+    /*
+     * Description:
+     *   This Action Listener updates the downloaded and uploaded file list when
+     *   the timer fires.
+     */
+    ActionListener TimerUpdate = new ActionListener() {
+
+        public void actionPerformed(ActionEvent evt) {
+            DefaultListModel list;
+            int index;
+            if (host != null) {
+                // Update Downloading files list
+                String[] files = host.GetCurrentDownloads();
+                index = DownloadFileList.getSelectedIndex();
+
+                list = new DefaultListModel();
+                DownloadFileList.removeAll();
+                for (int i = 0; i < files.length; i++) {
+                    list.addElement(files[i]);
+                }
+                DownloadFileList.setModel(list);
+                DownloadFileList.setSelectedIndex(index);
+
+                // Now update the Uploading files list
+                files = host.GetCurrentUploads();
+                index = UploadFileList.getSelectedIndex();
+
+                list = new DefaultListModel();
+                UploadFileList.removeAll();
+                for (int i = 0; i < files.length; i++) {
+                    list.addElement(files[i]);
+                }
+                UploadFileList.setModel(list);
+                UploadFileList.setSelectedIndex(index);
+
+            }
+
+            if (tracker != null) {
+                // Update the Registered Peers list
+                RegisteredPeer[] peers = tracker.registeredPeers.registeredPeers;
+                index = RegisteredPeersList.getSelectedIndex();
+
+                if ( peers[0] != null ) {
+                    list = new DefaultListModel();
+                    RegisteredPeersList.removeAll();
+                    for (int i = 0; i < peers.length; i++) {
+                        list.addElement(peers[i].peer.clientIp.toString());
+                    }
+                    RegisteredPeersList.setModel(list);
+                    RegisteredPeersList.setSelectedIndex(index);
+                }
+
+                // Now update the registered torrents table
+                Torrent[] torrents = tracker.registeredTorrents.registeredTorrents;
+
+                if ( torrents != null ) {
+                    DefaultTableModel model = (DefaultTableModel) RegisteredTorrentsTable.getModel();
+                    model.setRowCount(0);
+                    for (int i = 0; i < torrents.length; i++) {
+                        model.addRow(new Object[]{torrents[i].filename, torrents[i].filesize, torrents[i].numChunks});
+                    }
+                    RegisteredTorrentsTable.setModel(model);
+                }
+            }
+        }
+    };
+    private final Timer timer;
+
 
     /*
      * Description:
@@ -180,14 +333,32 @@ public class GUI extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         Uploads = new javax.swing.JPanel();
+        jScrollPane6 = new javax.swing.JScrollPane();
+        UploadFileList = new javax.swing.JList();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        FileUploadProgress = new javax.swing.JProgressBar();
+        jScrollPane7 = new javax.swing.JScrollPane();
+        UploadChunks = new javax.swing.JTable();
         HostedFiles = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         HostedFilesList = new javax.swing.JTextArea();
-        jPanel1 = new javax.swing.JPanel();
+        QueryResults = new javax.swing.JPanel();
         DownloadFromPeer = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         SearchResults = new javax.swing.JTable();
         QueryResultsHeader = new javax.swing.JTextField();
+        jPanel1 = new javax.swing.JPanel();
+        jSplitPane1 = new javax.swing.JSplitPane();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        RegisteredPeersList = new javax.swing.JList();
+        jScrollPane8 = new javax.swing.JScrollPane();
+        RegisteredPeersTable = new javax.swing.JTable();
+        jScrollPane9 = new javax.swing.JScrollPane();
+        RegisteredTorrentsTable = new javax.swing.JTable();
+        jSeparator2 = new javax.swing.JSeparator();
+        jLabel5 = new javax.swing.JLabel();
+        jLabel6 = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         Exit = new javax.swing.JMenuItem();
@@ -236,10 +407,10 @@ public class GUI extends javax.swing.JFrame {
 
         FileDownloadProgress.setStringPainted(true);
 
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 12));
         jLabel1.setText("File:");
 
-        jLabel3.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        jLabel3.setFont(new java.awt.Font("Tahoma", 1, 12));
         jLabel3.setText("Total Progress:");
 
         javax.swing.GroupLayout DownloadsLayout = new javax.swing.GroupLayout(Downloads);
@@ -256,9 +427,7 @@ public class GUI extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(DownloadsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 645, Short.MAX_VALUE)
-                            .addGroup(DownloadsLayout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(FileDownloadProgress, javax.swing.GroupLayout.DEFAULT_SIZE, 645, Short.MAX_VALUE))))
+                            .addComponent(FileDownloadProgress, javax.swing.GroupLayout.DEFAULT_SIZE, 645, Short.MAX_VALUE)))
                     .addGroup(DownloadsLayout.createSequentialGroup()
                         .addGap(281, 281, 281)
                         .addComponent(jLabel3)))
@@ -286,15 +455,81 @@ public class GUI extends javax.swing.JFrame {
 
         jTabbedPane1.addTab("Downloads               ", Downloads);
 
+        jScrollPane6.setViewportView(UploadFileList);
+
+        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 12));
+        jLabel2.setText("File:");
+
+        jLabel4.setFont(new java.awt.Font("Tahoma", 1, 12));
+        jLabel4.setText("Total Progress:");
+
+        FileUploadProgress.setStringPainted(true);
+
+        UploadChunks.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Chunk", "State", "Host"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane7.setViewportView(UploadChunks);
+
         javax.swing.GroupLayout UploadsLayout = new javax.swing.GroupLayout(Uploads);
         Uploads.setLayout(UploadsLayout);
         UploadsLayout.setHorizontalGroup(
             UploadsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 898, Short.MAX_VALUE)
+            .addGroup(UploadsLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(UploadsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
+                .addGroup(UploadsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(UploadsLayout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(UploadsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane7, javax.swing.GroupLayout.DEFAULT_SIZE, 645, Short.MAX_VALUE)
+                            .addComponent(FileUploadProgress, javax.swing.GroupLayout.DEFAULT_SIZE, 645, Short.MAX_VALUE)))
+                    .addGroup(UploadsLayout.createSequentialGroup()
+                        .addGap(281, 281, 281)
+                        .addComponent(jLabel4)))
+                .addContainerGap())
         );
         UploadsLayout.setVerticalGroup(
             UploadsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 514, Short.MAX_VALUE)
+            .addGroup(UploadsLayout.createSequentialGroup()
+                .addGroup(UploadsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(UploadsLayout.createSequentialGroup()
+                        .addGap(19, 19, 19)
+                        .addComponent(jLabel2))
+                    .addGroup(UploadsLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel4)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(UploadsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(UploadsLayout.createSequentialGroup()
+                        .addComponent(FileUploadProgress, javax.swing.GroupLayout.DEFAULT_SIZE, 22, Short.MAX_VALUE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 463, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
 
         jTabbedPane1.addTab("Uploads                 ", Uploads);
@@ -342,26 +577,26 @@ public class GUI extends javax.swing.JFrame {
         });
         jScrollPane2.setViewportView(SearchResults);
 
-        QueryResultsHeader.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        QueryResultsHeader.setFont(new java.awt.Font("Tahoma", 1, 12));
         QueryResultsHeader.setBorder(null);
         QueryResultsHeader.setOpaque(false);
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+        javax.swing.GroupLayout QueryResultsLayout = new javax.swing.GroupLayout(QueryResults);
+        QueryResults.setLayout(QueryResultsLayout);
+        QueryResultsLayout.setHorizontalGroup(
+            QueryResultsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, QueryResultsLayout.createSequentialGroup()
                 .addContainerGap(681, Short.MAX_VALUE)
                 .addComponent(DownloadFromPeer, javax.swing.GroupLayout.PREFERRED_SIZE, 207, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
             .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 898, Short.MAX_VALUE)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+            .addGroup(QueryResultsLayout.createSequentialGroup()
                 .addComponent(QueryResultsHeader, javax.swing.GroupLayout.PREFERRED_SIZE, 318, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+        QueryResultsLayout.setVerticalGroup(
+            QueryResultsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(QueryResultsLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(QueryResultsHeader, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -371,7 +606,93 @@ public class GUI extends javax.swing.JFrame {
                 .addContainerGap(16, Short.MAX_VALUE))
         );
 
-        jTabbedPane1.addTab("Query Results              ", jPanel1);
+        jTabbedPane1.addTab("Query Results              ", QueryResults);
+
+        jSplitPane1.setDividerLocation(125);
+
+        jScrollPane3.setViewportView(RegisteredPeersList);
+
+        jSplitPane1.setLeftComponent(jScrollPane3);
+
+        RegisteredPeersTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Sharing Files..."
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+        });
+        jScrollPane8.setViewportView(RegisteredPeersTable);
+
+        jSplitPane1.setRightComponent(jScrollPane8);
+
+        RegisteredTorrentsTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Torrent File", "File Size", "Number of Chunks"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.Object.class, java.lang.Object.class
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+        });
+        jScrollPane9.setViewportView(RegisteredTorrentsTable);
+
+        jSeparator2.setOrientation(javax.swing.SwingConstants.VERTICAL);
+
+        jLabel5.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        jLabel5.setText("Registered Peers:");
+
+        jLabel6.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        jLabel6.setText("Registered Torrent Files:");
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jSplitPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 313, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel5))
+                .addGap(39, 39, 39)
+                .addComponent(jSeparator2, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane9, javax.swing.GroupLayout.PREFERRED_SIZE, 486, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel6))
+                .addContainerGap())
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addGap(20, 20, 20)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel5)
+                    .addComponent(jLabel6))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jScrollPane9, javax.swing.GroupLayout.PREFERRED_SIZE, 459, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jSplitPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 458, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
+            .addComponent(jSeparator2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 514, Short.MAX_VALUE)
+        );
+
+        jTabbedPane1.addTab("Tracker                        ", jPanel1);
 
         jMenu1.setText("File");
 
@@ -446,14 +767,14 @@ public class GUI extends javax.swing.JFrame {
 
         searchFileName = SearchBox.getText();
         
-        //hostingPeers = host.Search(searchFileName);
+        hostingPeers = host.Search(searchFileName);
 
         if (hostingPeers != null) {
             QueryResultsHeader.setText("Query results for " + searchFileName);
             DefaultTableModel model = (DefaultTableModel) DownloadChunks.getModel();
             model.setRowCount(0);
             for (int i = 0; i < hostingPeers.length; i++) {
-                //model.addRow(new Object[]{i, hostingPeers[i].getIP(), hostingPeers[i].getCredit()});
+                model.addRow(new Object[]{i, hostingPeers[i].clientIp, hostingPeers[i].creditForThem});
             }
             SearchResults.setModel(model);
         } else {
@@ -462,15 +783,20 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_SearchButtonActionPerformed
 
     private void DownloadFromPeerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DownloadFromPeerActionPerformed
-        
-        int rowIndex = SearchResults.getSelectedRow();
-        if ( rowIndex < 0 ) {
+
+        if ( hostingPeers == null ) {
             JOptionPane.showMessageDialog(gui,
-                "You must select a peer to download from",
+                "There are no peers hosting this file!",
                 "Error",
                 JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int rowIndex = SearchResults.getSelectedRow();
+        if ( rowIndex < 0 ) {
+            host.StartDownload(searchFileName);
         } else {
-            //host.StartDownload(searchFileName, hostingPeers[rowIndex]);
+            host.StartDownload(searchFileName, hostingPeers[rowIndex]);
         }
     }//GEN-LAST:event_DownloadFromPeerActionPerformed
 
@@ -498,24 +824,42 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JPanel Downloads;
     private javax.swing.JMenuItem Exit;
     private javax.swing.JProgressBar FileDownloadProgress;
+    private javax.swing.JProgressBar FileUploadProgress;
     private javax.swing.JPanel HostedFiles;
     private javax.swing.JTextArea HostedFilesList;
+    private javax.swing.JPanel QueryResults;
     private javax.swing.JTextField QueryResultsHeader;
+    private javax.swing.JList RegisteredPeersList;
+    private javax.swing.JTable RegisteredPeersTable;
+    private javax.swing.JTable RegisteredTorrentsTable;
     private javax.swing.JTextField SearchBox;
     private javax.swing.JButton SearchButton;
     private javax.swing.JTable SearchResults;
+    private javax.swing.JTable UploadChunks;
+    private javax.swing.JList UploadFileList;
     private javax.swing.JPanel Uploads;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
+    private javax.swing.JScrollPane jScrollPane6;
+    private javax.swing.JScrollPane jScrollPane7;
+    private javax.swing.JScrollPane jScrollPane8;
+    private javax.swing.JScrollPane jScrollPane9;
     private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JSeparator jSeparator2;
+    private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JTabbedPane jTabbedPane1;
     // End of variables declaration//GEN-END:variables
 

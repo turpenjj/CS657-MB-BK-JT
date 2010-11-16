@@ -25,6 +25,8 @@ public class ConfigurationDialog extends javax.swing.JFrame {
     private int     maxDownloads;
     private int     maxUploads;
     private int     portNumber;
+    private boolean isTracker;
+    private String  TrackerIp;
     private boolean hostConfigured;
 
     /** Creates new form ConfigurationDialog */
@@ -47,6 +49,7 @@ public class ConfigurationDialog extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        buttonGroup1 = new javax.swing.ButtonGroup();
         OKButton = new javax.swing.JButton();
         CancelButton = new javax.swing.JButton();
         jPanel1 = new javax.swing.JPanel();
@@ -59,6 +62,11 @@ public class ConfigurationDialog extends javax.swing.JFrame {
         PortNumberEntry = new javax.swing.JTextField();
         MaxDownloadSelect = new javax.swing.JSlider();
         MaxUploadSelect = new javax.swing.JSlider();
+        YesButton = new javax.swing.JRadioButton();
+        jLabel1 = new javax.swing.JLabel();
+        TrackerIPField = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        NoButton = new javax.swing.JRadioButton();
 
         OKButton.setText("OK");
         OKButton.addActionListener(new java.awt.event.ActionListener() {
@@ -76,7 +84,7 @@ public class ConfigurationDialog extends javax.swing.JFrame {
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Configuration"));
 
-        Directory.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        Directory.setFont(new java.awt.Font("Tahoma", 1, 11));
         Directory.setText("Torrent File Directory:");
         Directory.setToolTipText("Specify the directory containing your torrent files.");
 
@@ -91,10 +99,10 @@ public class ConfigurationDialog extends javax.swing.JFrame {
         PortNumber.setText("Port Number:");
         PortNumber.setToolTipText("Select the port number to to use for downloads/uploads");
 
-        ConcurrentDL.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        ConcurrentDL.setFont(new java.awt.Font("Tahoma", 1, 11));
         ConcurrentDL.setText("Maximum concurrent Downloads:");
 
-        ConcurrentUL.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        ConcurrentUL.setFont(new java.awt.Font("Tahoma", 1, 11));
         ConcurrentUL.setText("Maximum concurrent Uploads:");
 
         MaxDownloadSelect.setMajorTickSpacing(10);
@@ -113,6 +121,19 @@ public class ConfigurationDialog extends javax.swing.JFrame {
         MaxUploadSelect.setSnapToTicks(true);
         MaxUploadSelect.setValue(0);
 
+        buttonGroup1.add(YesButton);
+        YesButton.setText("Yes");
+
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setText("Tracker:");
+
+        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel2.setText("Tracker IP:");
+
+        buttonGroup1.add(NoButton);
+        NoButton.setSelected(true);
+        NoButton.setText("No");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -123,28 +144,41 @@ public class ConfigurationDialog extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(Directory)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(DirectoryEntry, javax.swing.GroupLayout.DEFAULT_SIZE, 259, Short.MAX_VALUE)
+                        .addComponent(DirectoryEntry, javax.swing.GroupLayout.DEFAULT_SIZE, 312, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(BrowseButton)
-                        .addContainerGap(18, Short.MAX_VALUE))
+                        .addContainerGap(72, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(1, 1, 1)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(PortNumber)
-                                .addGap(19, 19, 19))
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(ConcurrentDL)
                                 .addGap(18, 18, 18))
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(ConcurrentUL)
                                 .addGap(18, 18, 18)))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(MaxUploadSelect, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(MaxDownloadSelect, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(200, 200, 200))))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(123, 123, 123)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(PortNumber)
+                    .addComponent(jLabel2)
+                    .addComponent(jLabel1))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(YesButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(NoButton))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(1, 1, 1)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(PortNumberEntry, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                .addComponent(MaxUploadSelect, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(MaxDownloadSelect, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(93, 93, 93))))
+                            .addComponent(PortNumberEntry, javax.swing.GroupLayout.DEFAULT_SIZE, 83, Short.MAX_VALUE)
+                            .addComponent(TrackerIPField, javax.swing.GroupLayout.DEFAULT_SIZE, 83, Short.MAX_VALUE))))
+                .addGap(318, 318, 318))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -168,11 +202,20 @@ public class ConfigurationDialog extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(59, 59, 59)
                         .addComponent(ConcurrentUL)))
-                .addGap(56, 56, 56)
+                .addGap(35, 35, 35)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(YesButton)
+                    .addComponent(NoButton))
+                .addGap(34, 34, 34)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(TrackerIPField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(PortNumber)
                     .addComponent(PortNumberEntry, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(30, 30, 30))
+                .addGap(45, 45, 45))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -193,7 +236,7 @@ public class ConfigurationDialog extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 363, Short.MAX_VALUE)
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(CancelButton)
@@ -236,6 +279,11 @@ public class ConfigurationDialog extends javax.swing.JFrame {
                 "Please select a port number",
                 "Error",
                 JOptionPane.ERROR_MESSAGE);
+        } else if ( NoButton.isSelected() && (TrackerIPField.getText().length() == 0) ) {
+            JOptionPane.showMessageDialog(ds,
+                "Please specify a Tracker IP Address",
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
         } else {
             torrentDir = new File(DirectoryEntry.getText());
             portNumber = ((Number)(Integer.parseInt(PortNumberEntry.getText()))).intValue();
@@ -244,9 +292,10 @@ public class ConfigurationDialog extends javax.swing.JFrame {
             this.setVisible(false);
             GUI.getInstance().updateHostedFiles(torrentDir);
 
-            if ( !hostConfigured ) {
+            if (YesButton.isSelected()) {
                 GUI.getInstance().InitializeHost(torrentDir, portNumber);
-                hostConfigured = true;
+            } else {
+                GUI.getInstance().InitializeHost(torrentDir, portNumber, TrackerIp);
             }
         }
     }//GEN-LAST:event_OKButtonActionPerformed
@@ -272,9 +321,15 @@ public class ConfigurationDialog extends javax.swing.JFrame {
     private javax.swing.JTextField DirectoryEntry;
     private javax.swing.JSlider MaxDownloadSelect;
     private javax.swing.JSlider MaxUploadSelect;
+    private javax.swing.JRadioButton NoButton;
     private javax.swing.JButton OKButton;
     private javax.swing.JLabel PortNumber;
     private javax.swing.JTextField PortNumberEntry;
+    private javax.swing.JTextField TrackerIPField;
+    private javax.swing.JRadioButton YesButton;
+    private javax.swing.ButtonGroup buttonGroup1;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
     // End of variables declaration//GEN-END:variables
 
