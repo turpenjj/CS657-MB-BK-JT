@@ -163,4 +163,8 @@ public class Peer {
         }
         return -1;
     }
+
+    public String toString() {
+        return this.clientIp + ":" + this.listeningPort;
+    }
 }

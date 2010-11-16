@@ -157,4 +157,8 @@ public class Tracker implements Runnable {
                 break;
         }
     }
+
+    public String toString() {
+        return this.registeredPeers.toString() + "\n" + this.registeredTorrents.toString();
+    }
 }

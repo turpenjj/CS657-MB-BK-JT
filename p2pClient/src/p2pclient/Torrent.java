@@ -16,7 +16,7 @@ public class Torrent {
     public int filesize;
     public int numChunks;
     public ChunkInfo[] chunks;
-    public static int CHUNK_SIZE = 100;
+    public static int CHUNK_SIZE = 1000;
     public long timestamp; // timestamp at which this torrent was created
 
     /**

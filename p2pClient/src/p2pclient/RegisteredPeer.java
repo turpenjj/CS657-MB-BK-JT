@@ -22,4 +22,14 @@ public class RegisteredPeer {
             this.files = new String[0];
         }
     }
+
+    public String toString() {
+        String string = this.peer.toString() + "; Timestamp = " + this.timestampMsec + "; Files = ";
+
+        for (String file : this.files) {
+            string = string.concat(file + "; ");
+        }
+
+        return string;
+    }
 }

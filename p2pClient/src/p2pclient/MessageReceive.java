@@ -105,7 +105,7 @@ public class MessageReceive implements Runnable {
                     } else {
                     }
                 }
-                if ( accept && receivedPacketData != null ) {
+                if ( accept ) {
                     Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, "Accepting this packet");
                     Util.DebugPrint(DbgSub.MESSAGE_RECEIVE, Util.ConvertToHex(receivedPacketData));
                     if ( (messageBuff = FindMessage(packetHeader[0].sessionID)) != null ) {

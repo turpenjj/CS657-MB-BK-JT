@@ -211,4 +211,16 @@ public class TrackerTorrentRegistration {
         // TODO: fill me in
         // iterate through Torrent list and remove any entries that have timed out
     }
+
+    public String toString() {
+        String string = "Registered Torrents:\n";
+
+        if (this.registeredTorrents != null && this.registeredTorrents.length != 0 && this.registeredTorrents[0] != null) {
+            for (Torrent torrent : this.registeredTorrents) {
+                string = string.concat(torrent.toString() + "\n");
+            }
+        }
+
+        return string;
+    }
 }
