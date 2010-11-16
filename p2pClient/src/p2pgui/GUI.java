@@ -105,7 +105,9 @@ public class GUI extends javax.swing.JFrame {
                             default:
                                 break;
                         }
-                        model.addRow(new Object[]{chunks[i].chunkNumber, state, chunks[i].receivedFrom.clientIp});
+                        if ( chunks[i] != null && chunks[i].receivedFrom != null ) {
+                            model.addRow(new Object[]{chunks[i].chunkNumber, state, chunks[i].receivedFrom.clientIp});
+                        }
                     }
                     DownloadChunks.setModel(model);
 
@@ -137,25 +139,27 @@ public class GUI extends javax.swing.JFrame {
                     float totalAvailable = 0;
                     DefaultTableModel model = (DefaultTableModel)UploadChunks.getModel();
                     model.setRowCount(0);
-                    for (int i = 0; i < chunks.length; i++) {
-                        String state = null;
-                        switch(chunks[i].status) {
-                            case 0:
-                                state = "Missing";
-                                break;
-                            case 1:
-                                state = "Download in Progress";
-                                break;
-                            case 2:
-                                state = "Available";
-                                totalAvailable++;
-                                break;
-                            default:
-                                break;
+                    if ( chunks != null ) {
+                        for (int i = 0; i < chunks.length; i++) {
+                            String state = null;
+                            switch(chunks[i].status) {
+                                case 0:
+                                    state = "Missing";
+                                    break;
+                                case 1:
+                                    state = "Download in Progress";
+                                    break;
+                                case 2:
+                                    state = "Available";
+                                    totalAvailable++;
+                                    break;
+                                default:
+                                    break;
+                            }
+                            model.addRow(new Object[]{chunks[i].chunkNumber, state, chunks[i].receivedFrom.clientIp});
                         }
-                        model.addRow(new Object[]{chunks[i].chunkNumber, state, chunks[i].receivedFrom.clientIp});
-                    }
                     UploadChunks.setModel(model);
+                    }
 
                     int percentComplete = (int) ((totalAvailable/chunks.length) * 100);
                     FileUploadProgress.setValue(percentComplete);

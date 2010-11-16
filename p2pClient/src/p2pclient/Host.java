@@ -140,7 +140,7 @@ public class Host implements Runnable{
      *   Returns the chunk information for all chunks associated with a given
      *   file.  Returns null if the given file is not known.
      */
-    public synchronized ChunkInfo[] GetFileChunkInfo(String filename) {
+    public ChunkInfo[] GetFileChunkInfo(String filename) {
         ChunkManager chunkManager = FindChunkManager(filename);
 
         if ( chunkManager != null ) {
@@ -152,28 +152,68 @@ public class Host implements Runnable{
     /*
      * Starts a download for the given file
      */
-    public synchronized void StartDownload(String filename) {
+    public void StartDownload(String filename) {
+        //Get the torrent file from the tracker if we don't already have it.
         Peer[] peerList = peerManager.GetAllPeersSharingFile(filename);
         for ( Peer peer : peerList ) {
             StartDownload(filename, peer);
         }
     }
 
+    private ChunkManager RequestTorrent(String filename) {
+        ChunkManager chunkManager = null;
+
+        Util.DebugPrint(DbgSub.HOST, "Need to request torrent");
+        int DOWNLOAD_TIMEOUT = 10000;
+        long downloadTimeout = Util.GetCurrentTime() + DOWNLOAD_TIMEOUT;
+        int torrentListeningPort = Util.GetRandomHighPort(new java.util.Random());
+        PacketType[] acceptedPacketType = {PacketType.TRACKER_TORRENT_RESPONSE};
+        MessageReceive torrentReceiver = new MessageReceive(torrentListeningPort, acceptedPacketType, true);
+        torrentReceiver.start();
+        MessageSend torrentRequestor = new MessageSend();
+        TrackerTorrentQuery torrentRequest = new TrackerTorrentQuery(filename, torrentListeningPort);
+        torrentRequestor.SendCommunication(peerTracker, PacketType.TRACKER_TORRENT_QUERY, listeningPort, torrentRequest.ExportQuery());
+        Peer[] receivedPeer = new Peer[1];
+        int[] receivedSessionId = new int[1];
+        PacketType[] receivedPacketType = new PacketType[1];
+        while ( Util.GetCurrentTime() < downloadTimeout ) {
+            //Request the torrent file
+            byte[] receivedMessage = torrentReceiver.GetMessage(listeningPort, acceptedPacketType, receivedPeer,  receivedPacketType, receivedSessionId);
+            if ( receivedMessage != null ) {
+                TrackerTorrentResponse torrentResponse = new TrackerTorrentResponse();
+                torrentResponse.ImportMessagePayload(receivedMessage);
+                if ( torrentResponse.torrent.numChunks > 0 ) {
+                    chunkManager = CreateChunkManagerFromTorrent(null, null, torrentResponse.torrent);
+                    AddChunkManager(chunkManager);
+                    Util.DebugPrint(DbgSub.HOST, "Added a chunk manager");
+                }
+                break;
+            }
+            Thread.yield();
+        }
+        torrentReceiver.Stop();
+        return chunkManager;
+    }
+
     /*
      * Starts downloading a file from a specific peer
      */
-    public synchronized void StartDownload(String filename, Peer peer) {
+    public void StartDownload(String filename, Peer peer) {
         ChunkManager chunkManager = FindChunkManager(filename);
         Util.DebugPrint(DbgSub.HOST, "Starting to download " + filename + " from " + peer.clientIp);
-
+        if ( chunkManager == null ) {
+            chunkManager = RequestTorrent(filename);
+        }
         //If we couldn't find the chunk manager for this file, we can't download it!
         if ( chunkManager != null ) {
+            Util.DebugPrint(DbgSub.HOST, "Started downloading!");
             chunkManager.downloadStarted = true;
             RequestingClient requestingClient = new RequestingClient(peer, filename, chunkManager, peerManager);
+            requestingClient.start();
             AddRequestingClientToList(requestingClient);
         }
     }
-    
+
     /*
      * Returns the ChunkManager for the given file.  If it doesn't exist, returns null
      */
@@ -203,7 +243,7 @@ public class Host implements Runnable{
      * Description:
      *   Searches the tracker for a given file
      */
-    public synchronized Peer[] Search(String filename) throws InterruptedException {
+    public Peer[] Search(String filename) throws InterruptedException {
         int searchListeningPort = Util.GetRandomHighPort(new Random());
         MessageSend messageSender = new MessageSend();
         PacketType[] acceptedPacketType = {PacketType.TRACKER_QUERY_RESPONSE};
@@ -244,7 +284,7 @@ public class Host implements Runnable{
         return null;
     }
 
-    private synchronized void BroadcastTrackerRegistration() {
+    private void BroadcastTrackerRegistration() {
         try {
             Util.DebugPrint(DbgSub.HOST, "Broadcasting our registrationg to the tracker");
             MessageSend messageSender = new MessageSend();
@@ -281,7 +321,7 @@ public class Host implements Runnable{
 
     }
 
-    private synchronized void BroadcastTorrents() {
+    private void BroadcastTorrents() {
         MessageSend messageSender = new MessageSend();
         Util.DebugPrint(DbgSub.HOST, "Attempting to broadcast torrents");
 
@@ -304,6 +344,7 @@ public class Host implements Runnable{
             torrentIndex++;
         }
         try {
+            //Wait for 5 seconds before checking the responses to give the tracker time to respond
             Thread.sleep(5000);
             for ( int i = 0; i < torrentIndex; i ++ ) {
                 //Request a message for each Torrent. If we don't have a message, that torrent needs to be broadcast
@@ -324,6 +365,7 @@ public class Host implements Runnable{
                 if ( shouldBroadcast ) {
                     Util.DebugPrint(DbgSub.HOST, "Broadcasting torrent information for " + allTorrents[i]);
                     torrent = new Torrent(shareFolder, allTorrents[i]);
+                    Util.DebugPrint(DbgSub.HOST, "  has " + torrent.numChunks + " chunks");
                     TrackerTorrentRegistration torrentRegistration = new TrackerTorrentRegistration(torrent);
                     byte[] torrentRegistrationData = torrentRegistration.ExportMessagePayload();
                     messageSender.SendCommunication(peerTracker, PacketType.TRACKER_TORRENT_REGISTRATION, Util.GetRandomHighPort(new java.util.Random()), torrentRegistrationData);
@@ -332,6 +374,17 @@ public class Host implements Runnable{
         } catch (Exception ex) {
             Logger.getLogger(Host.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private synchronized void AddChunkManager(ChunkManager chunkManager) {
+        if ( chunkManagers == null ) {
+            chunkManagers = new ChunkManager[1];
+        } else {
+            ChunkManager[] tempList = new ChunkManager[chunkManagers.length + 1];
+            System.arraycopy(chunkManagers, 0, tempList, 0, chunkManagers.length);
+            chunkManagers = tempList;
+        }
+        chunkManagers[chunkManagers.length - 1] = chunkManager;
     }
 
     private synchronized ChunkManager[] PopulateChunkManagers() {
@@ -354,20 +407,30 @@ public class Host implements Runnable{
 
     private synchronized ChunkManager CreateChunkManagerFromTorrent(String path, String filename, Torrent torrent) {
         try {
-            File file = new File(path + filename);
-            FileInputStream fileInputStream = new FileInputStream(file);
-            byte[] byteBuffer = new byte[torrent.CHUNK_SIZE];
+            byte[] byteBuffer = null;
             int bytesRead;
+            FileInputStream fileInputStream = null;
+            if ( path != null && filename != null ) {
+                File file = new File(path + filename);
+                fileInputStream = new FileInputStream(file);
+                byteBuffer = new byte[torrent.CHUNK_SIZE];
+            }
 
             ChunkManager chunkManager = new ChunkManager(torrent.filename);
             chunkManager.chunkList = new FileChunk[torrent.numChunks];
             for ( int i = 0; i < torrent.numChunks; i++ ) {
-                bytesRead = fileInputStream.read(byteBuffer);
                 chunkManager.chunkList[i] = new FileChunk(torrent.chunks[i].chunkNumber, torrent.chunks[i].hash, torrent.chunks[i].status, null);
-                chunkManager.chunkList[i].chunk = new byte[bytesRead];
-                System.arraycopy(byteBuffer, 0, chunkManager.chunkList[i].chunk, 0, bytesRead);
                 chunkManager.chunkList[i].chunkInfo = torrent.chunks[i];
+
+                if ( fileInputStream != null ) {
+                    bytesRead = fileInputStream.read(byteBuffer);
+                    chunkManager.chunkList[i].chunk = new byte[bytesRead];
+                    System.arraycopy(byteBuffer, 0, chunkManager.chunkList[i].chunk, 0, bytesRead);
+                } else {
+                    chunkManager.chunkList[i].chunkInfo.status = 0;
+                }
             }
+            Util.DebugPrint(DbgSub.HOST, "Created a chunk manager based off torrent: " + chunkManager + " filename " + chunkManager.filename);
             return chunkManager;
         } catch ( IOException e ) {
         }

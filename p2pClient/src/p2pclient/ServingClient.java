@@ -67,7 +67,7 @@ public class ServingClient implements Runnable {
                         persistentPeer.AddFileToList(chunkListRequest.filename);
                         break;
                     case CHUNK_REQUEST:
-                        if ( peerManager.ShouldTradeWith(peer[0]) ) {
+                        if ( peerManager.ShouldTradeWith(persistentPeer) ) {
                             ChunkRequest chunkRequest = new ChunkRequest();
                             chunkRequest.ImportMessagePayload(messageData);
                             Util.DebugPrint(DbgSub.SERVING_CLIENT, "ServingClient: Responding to chunk request for file " + chunkRequest.filename + "(" + chunkRequest.chunkNumber + ")");

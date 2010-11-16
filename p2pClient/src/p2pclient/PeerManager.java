@@ -122,7 +122,8 @@ public class PeerManager {
      */
     public synchronized boolean ShouldTradeWith(Peer peer) {
         //TODO: Implement algorithm to determine if we want to share with the given peer or not
-        if ( peer.creditForThem > peer.creditForUs ||
+        int THROTTLE = 3;
+        if ( (peer.creditForThem + THROTTLE) >= peer.creditForUs ||
                 peer.outstandingRequests > (peer.creditForThem - peer.creditForUs) ||
                 peer.lastServiced < (Util.GetCurrentTime() - PEER_UNCHOKE) ) {
                 return true;

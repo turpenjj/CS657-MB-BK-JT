@@ -63,7 +63,6 @@ public class RequestingClient implements Runnable {
                         Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Requesting chunk " + i + " from " + servingHost.clientIp);
                         RequestChunk(i);
                     } else {
-                        Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "RequestingClient: Choosing not to request a chunk from " + servingHost.clientIp);
                     }
                 }
             }
@@ -89,17 +88,14 @@ public class RequestingClient implements Runnable {
                             RemoveListenerFromList(listenerList[i]);
                             break;
                         case 2: //timeout
-                            Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "11111111111111111Request timed out: " + listenerList[i].chunkNumber );
                             if ( listenerList[i].requestType[0] == PacketType.CHUNK_RESPONSE ) {
                                 TimeoutChunkRequest(listenerList[i].chunkNumber);
-                                Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "AM I A MORON");
 //                                chunkManager.UpdateChunkStatus(listenerList[i].chunkNumber, 0);
 //                                Thread.yield();
 //                                chunkManager.chunkList[listenerList[i].chunkNumber].chunkInfo.status = 0;
                                 servingHost.outstandingRequests--;
                             }
                             RemoveListenerFromList(listenerList[i]);
-                            Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "!!!!!!!!!!!! missing chunks: " + chunkManager.NeededChunks().length);
                             break;
                     }
                     Thread.yield();
@@ -154,15 +150,6 @@ public class RequestingClient implements Runnable {
             System.arraycopy(listenerList, listenerIndex + 1, tempListenerList, listenerIndex, tempListenerList.length - listenerIndex);
             listenerList = tempListenerList;
         }
-    }
-
-    private synchronized Listener FindListener(int sessionID) {
-        for ( int i = 0; listenerList != null && i < listenerList.length; i++ ) {
-            if ( listenerList[i].sessionID == sessionID ) {
-                return listenerList[i];
-            }
-        }
-        return null;
     }
 
     /*
@@ -232,8 +219,8 @@ public class RequestingClient implements Runnable {
 
             Util.DebugPrint(DbgSub.REQUESTING_CLIENT, "ReceivingClient: received chunk " + chunkNumber + " for " + filename);
             chunkManager.UpdateChunk(chunkNumber, chunkData, servingHost);
-            servingHost.creditForThem++;
-        }        
+            chunkManager.chunkList[chunkNumber].chunkInfo.status = 2;
+        }
     }
 
 }

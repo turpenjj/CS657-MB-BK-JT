@@ -124,7 +124,8 @@ public class Peer {
      * them.  This will help throttle our requests to a given peer.
      */
     public synchronized boolean ShouldRequest() {
-        if ( outstandingRequests > creditForUs ) {
+        int THROTTLE = 3;
+        if ( outstandingRequests > creditForUs + THROTTLE ) {
             return false;
         }
         return true;
