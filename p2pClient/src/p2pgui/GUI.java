@@ -794,10 +794,10 @@ public class GUI extends javax.swing.JFrame {
 
         if (hostingPeers != null) {
             QueryResultsHeader.setText("Query results for " + searchFileName);
-            DefaultTableModel model = (DefaultTableModel) DownloadChunks.getModel();
+            DefaultTableModel model = (DefaultTableModel) SearchResults.getModel();
             model.setRowCount(0);
             for (int i = 0; i < hostingPeers.length; i++) {
-                model.addRow(new Object[]{i, hostingPeers[i].clientIp, hostingPeers[i].creditForThem});
+                model.addRow(new Object[]{hostingPeers[i].clientIp, hostingPeers[i].creditForThem});
             }
             SearchResults.setModel(model);
         } else {
