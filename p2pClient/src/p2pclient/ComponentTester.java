@@ -717,7 +717,7 @@ public class ComponentTester {
             Peer dummyPeer = new Peer(InetAddress.getLocalHost(), 51515);
             peerManager.UpdatePeer(dummyPeer);
             Peer peer = new Peer(InetAddress.getLocalHost(), 54321);
-            RequestingClient requestingClient = new RequestingClient(peer, "Filename1", chunkManagers[1]);
+            RequestingClient requestingClient = new RequestingClient(peer, "Filename1", chunkManagers[1], peerManager);
             requestingClient.start();
         } catch ( UnknownHostException e ) {
             Util.DebugPrint(DbgSub.COMPONENT_TESTER, "We're in trouble... we can't find ourself " + e);
