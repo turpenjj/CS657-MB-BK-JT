@@ -29,7 +29,7 @@ public class PeerManager {
     public synchronized Peer UpdatePeer(Peer peerToUpdate) {
         Peer peerInList = GetPeer(peerToUpdate.clientIp);
         if ( peerInList == null ) {
-            peerInList = new Peer(peerToUpdate.clientIp, 0);
+            peerInList = new Peer(peerToUpdate.clientIp, peerToUpdate.listeningPort);
             AddPeerToList(peerInList);
         }
         return peerInList;

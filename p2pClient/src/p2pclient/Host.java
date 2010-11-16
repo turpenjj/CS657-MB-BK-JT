@@ -23,16 +23,9 @@ public class Host implements Runnable{
     int listeningPort;
     String shareFolder;
     InetAddress trackerIP;
-
-    public Host(int servingClientListeningPort, String directory) {
-        runner = null;
-        listeningPort = servingClientListeningPort;
-        shareFolder = directory + "\\";
-        chunkManagers = PopulateChunkManagers();
-        peerManager = new PeerManager();
-        servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
-        trackerIP = null;
-    }
+//    boolean isTracker;
+//    Tracker tracker;
+    Peer peerTracker;
 
     public Host(int servingClientListeningPort, String directory, String trackerIp) throws UnknownHostException {
         runner = null;
@@ -42,7 +35,24 @@ public class Host implements Runnable{
         peerManager = new PeerManager();
         servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
         trackerIP = InetAddress.getByName(trackerIp);
+//        isTracker = false;
+//        tracker = null;
+       Util.DebugPrint(DbgSub.HOST, trackerIp);
+        peerTracker = new Peer(this.trackerIP, Tracker.TRACKER_LISTENING_PORT);
     }
+
+//    public Host(int servingClientListeningPort, String directory, String trackerIp, boolean isTracker) throws UnknownHostException {
+//        runner = null;
+//        listeningPort = servingClientListeningPort;
+//        shareFolder = directory + "\\";
+//        chunkManagers = PopulateChunkManagers();
+//        peerManager = new PeerManager();
+//        servingClient = new ServingClient(listeningPort, chunkManagers, peerManager);
+//        trackerIP = InetAddress.getByName(trackerIp);
+////        isTracker = true;
+////        tracker = new Tracker(Tracker.TRACKER_LISTENING_PORT);
+//        peerTracker = new Peer(InetAddress.getByName("192.168.1.101"), Tracker.TRACKER_LISTENING_PORT);
+//    }
 
     public void start() {
         if ( runner == null ) {
@@ -53,25 +63,21 @@ public class Host implements Runnable{
 
     public void run() {
         Util.DebugPrint(DbgSub.HOST, "Startng a new host, listening for connections on port " + listeningPort);
-        ChunkManager[] temp = new ChunkManager[3];
-        System.arraycopy(chunkManagers, 0, temp, 0, 2);
-        chunkManagers = temp;
-        chunkManagers[2] = new ChunkManager("chu");
-        servingClient.UpdateChunkManagers(chunkManagers);
         //Start our listener so we can serve out file chunks upon request
         servingClient.start();
         MessageSend messageSender = new MessageSend();
 
         try {
+//            if ( isTracker ) {
+//                tracker.start();
+//            }
             TrackerRegistration trackerRegistration = new TrackerRegistration(listeningPort);
 
             trackerRegistration.AddFilesFromDirectory(shareFolder);
 
             byte[] registrationMessageData = trackerRegistration.ExportMessagePayload();
 
-            Peer tracker = new Peer(InetAddress.getByName("192.168.100.202"), Tracker.TRACKER_LISTENING_PORT);
-
-            messageSender.SendCommunication(tracker, PacketType.TRACKER_REGISTRATION, Tracker.TRACKER_LISTENING_PORT, registrationMessageData);
+            messageSender.SendCommunication(peerTracker, PacketType.TRACKER_REGISTRATION, Tracker.TRACKER_LISTENING_PORT, registrationMessageData);
         } catch (Exception e) {
             Util.DebugPrint(DbgSub.HOST, "Caught exception " + e);
         }
@@ -93,7 +99,7 @@ public class Host implements Runnable{
             return null;
         }
         for ( ChunkManager chunkManager : chunkManagers ) {
-            if (chunkManager.NeededChunks() != null || chunkManager.DownloadingChunks() != null ) {
+            if ( chunkManager.downloadStarted && (chunkManager.NeededChunks() != null || chunkManager.DownloadingChunks() != null) ) {
                 if ( currentDownloads == null ) {
                     currentDownloads = new String[1];
                 } else {
@@ -113,22 +119,24 @@ public class Host implements Runnable{
             return null;
         }
         for ( Peer peer : peerManager.peerList ) {
-            for ( int i = 0; i < peer.filesWeSent.length; i++ ) {
-                if ( currentUploads == null  ) {
-                    currentUploads = new String[1];
-                } else {
-                    String[] tempList = new String[currentUploads.length + 1];
-                    System.arraycopy(currentUploads, 0, tempList, 0, currentUploads.length);
-                    currentUploads = tempList;
-                }
-                currentUploads[currentUploads.length - 1] = peer.filesWeSent[i] + " {";
-                for ( int j = 0; j < peer.chunksWeSent[i].length; j++ ) {
-                    currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat("" + peer.chunksWeSent[i][j]);
-                    if ( j != peer.chunksWeSent[i].length - 1) {
-                        currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat(", ");
+            if ( peer.filesWeSent != null ) {
+                for ( int i = 0; i < peer.filesWeSent.length; i++ ) {
+                    if ( currentUploads == null  ) {
+                        currentUploads = new String[1];
+                    } else {
+                        String[] tempList = new String[currentUploads.length + 1];
+                        System.arraycopy(currentUploads, 0, tempList, 0, currentUploads.length);
+                        currentUploads = tempList;
                     }
+                    currentUploads[currentUploads.length - 1] = peer.filesWeSent[i] + " {";
+                    for ( int j = 0; j < peer.chunksWeSent[i].length; j++ ) {
+                        currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat("" + peer.chunksWeSent[i][j]);
+                        if ( j != peer.chunksWeSent[i].length - 1) {
+                            currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat(", ");
+                        }
+                    }
+                    currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat(" sent to " + peer.clientIp);
                 }
-                currentUploads[currentUploads.length-1] = currentUploads[currentUploads.length-1].concat(" sent to " + peer.clientIp);
             }
         }
         return currentUploads;
@@ -163,9 +171,11 @@ public class Host implements Runnable{
      */
     public synchronized void StartDownload(String filename, Peer peer) {
         ChunkManager chunkManager = FindChunkManager(filename);
+        Util.DebugPrint(DbgSub.HOST, "Starting to download " + filename + " from " + peer.clientIp);
 
         //If we couldn't find the chunk manager for this file, we can't download it!
         if ( chunkManager != null ) {
+            chunkManager.downloadStarted = true;
             RequestingClient requestingClient = new RequestingClient(peer, filename, chunkManager, peerManager);
             AddRequestingClientToList(requestingClient);
         }
@@ -201,9 +211,10 @@ public class Host implements Runnable{
      *   Searches the tracker for a given file
      */
     public synchronized Peer[] Search(String filename) throws InterruptedException {
+        int searchListeningPort = Util.GetRandomHighPort(new Random());
         MessageSend messageSender = new MessageSend();
         PacketType[] acceptedPacketType = {PacketType.TRACKER_QUERY_RESPONSE};
-        MessageReceive queryMessageReceive = new MessageReceive(this.listeningPort, acceptedPacketType, false);
+        MessageReceive queryMessageReceive = new MessageReceive(searchListeningPort, acceptedPacketType, false);
         queryMessageReceive.start();
         byte[] receivedMessageData;
         Peer[] receivedPeer = new Peer[1];
@@ -214,18 +225,25 @@ public class Host implements Runnable{
         TrackerQueryResponse trackerQueryResponse;
         Peer trackerPeer = new Peer(trackerIP, Tracker.TRACKER_LISTENING_PORT);
 
-        TrackerQuery trackerQuery = new TrackerQuery(filename, this.listeningPort);
-        messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_QUERY, Tracker.TRACKER_LISTENING_PORT, trackerQuery.ExportQuery());
+        TrackerQuery trackerQuery = new TrackerQuery(filename, searchListeningPort);
+        Util.DebugPrint(DbgSub.HOST, trackerPeer.clientIp);
+        messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_QUERY, sessionId, trackerQuery.ExportQuery());
 
         Thread.sleep(1000);
 
         receivedMessageData = queryMessageReceive.GetMessage(sessionId, acceptedPacketType, receivedPeer, receivedPacketType, receivedSessionId);
+        if ( receivedMessageData != null ) {
+            Util.DebugPrint(DbgSub.HOST, "received Message " + Util.ConvertToHex(receivedMessageData));
+        }
             if (receivedMessageData != null) {
                 trackerQueryResponse = new TrackerQueryResponse();
                 trackerQueryResponse.ImportResponse(receivedMessageData);
 
                 if ( trackerQueryResponse.peerList != null ) {
                     queryMessageReceive.Stop();
+                    for ( Peer peer : trackerQueryResponse.peerList ) {
+                        peerManager.UpdatePeer(peer);
+                    }
                     return trackerQueryResponse.peerList;
                 } else {
                     queryMessageReceive.Stop();

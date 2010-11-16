@@ -14,6 +14,7 @@ package p2pclient;
  */
 public class ChunkManager {
     public String filename;
+    public boolean downloadStarted;
     FileChunk[] chunkList;
 
     /*
@@ -29,6 +30,7 @@ public class ChunkManager {
      */
     ChunkManager(String newFile) {
         filename = newFile;
+        downloadStarted = false;
     }
 
     public synchronized ChunkManager FindChunkManager(String filename) {
