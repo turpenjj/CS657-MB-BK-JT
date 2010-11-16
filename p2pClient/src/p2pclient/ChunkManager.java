@@ -99,6 +99,8 @@ public class ChunkManager {
     public synchronized void UpdateChunk(int chunkNumber, byte[] chunkData, Peer receivedFrom) {
         if ( chunkNumber < chunkList.length ) {
             chunkList[chunkNumber].UpdateChunk(chunkData, receivedFrom);
+            chunkList[chunkNumber].chunk = chunkData;
+            chunkList[chunkNumber].chunkInfo.status = 2;
         }
     }
 
