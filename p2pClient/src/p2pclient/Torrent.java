@@ -112,7 +112,10 @@ public class Torrent {
     }
 
     public String toString() {
-        return "Filename = '" + this.filename + "'; File size = " + this.filesize + "; Number of Chunks = " + this.numChunks;
-
+        String string = "\nChunk Hashes: ";
+        for (ChunkInfo chunkInfo : this.chunks) {
+            string = string.concat("#" + chunkInfo.chunkNumber + "-" + chunkInfo.toString() + "; ");
+        }
+        return "Filename = '" + this.filename + "'; File size = " + this.filesize + "; Number of Chunks = " + this.numChunks + string;
     }
 }

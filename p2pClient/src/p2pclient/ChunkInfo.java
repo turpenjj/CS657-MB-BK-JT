@@ -20,4 +20,8 @@ public class ChunkInfo {
         System.arraycopy(chunkHash, 0, hash, 0, chunkHash.length);
         status = stat;
     }
+
+    public String toString() {
+        return Util.ConvertToHex(this.hash);
+    }
 }

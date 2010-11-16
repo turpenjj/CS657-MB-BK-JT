@@ -94,16 +94,22 @@ public class ComponentTester {
         int numFiles;
         int fileNum;
         String fileSharePath;
-
-        tracker.start();
+        MessageReceive[] registeredListeners = new MessageReceive[0];
+        MessageReceive[] temptRegisteredListeners;
 
         // give the tracker a chance to get going
         Thread.sleep(2000);
 
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 5; i++) {
             trackerRegistration = new TrackerRegistration(Util.GetRandomHighPort(random));
             messageReceive = new MessageReceive(trackerRegistration.peer.listeningPort, acceptedPeerPacketTypes, true);
             messageReceive.start();
+
+            // add to list so we can stop them at the end
+            temptRegisteredListeners = new MessageReceive[registeredListeners.length + 1];
+            temptRegisteredListeners[0] = messageReceive;
+            System.arraycopy(registeredListeners, 0, temptRegisteredListeners, 1, registeredListeners.length);
+            registeredListeners = temptRegisteredListeners;
 
             if (i % 2 == 0) {
                 Util.DebugPrint(DbgSub.COMPONENT_TESTER, "i = " + i);
@@ -114,16 +120,20 @@ public class ComponentTester {
             }
             trackerRegistration.AddFilesFromDirectory(fileSharePath);
             Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Registering peer: " + trackerRegistration.toString());
+            //Thread.sleep(200);
             messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_REGISTRATION, random.nextInt(), trackerRegistration.ExportMessagePayload());
 
-            Thread.sleep(1000);
+            Thread.sleep(200);
 
             Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Tracker state: " + tracker.toString());
-
+            
+//            String[] temp = new String[trackerRegistration.registeredPeers[0].files.length - 1];
+//            System.arraycopy(trackerRegistration.registeredPeers[0].files, 0, temp, 0, temp.length);
+//            trackerRegistration.registeredPeers[0].files = temp;
             // try out duplicate registrations (same peer with same listening port ot make sure it works)
             messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_REGISTRATION, random.nextInt(), trackerRegistration.ExportMessagePayload());
 
-            Thread.sleep(1000);
+            Thread.sleep(500);
 
             Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Tracker state: " + tracker.toString());
             
@@ -161,37 +171,78 @@ public class ComponentTester {
                     queryMessageReceive.Stop();
                 }
             }
-            Thread.sleep(15 * 1000);
+
+            // sleep a while but not long enough for our stuff to timeout
+            Thread.sleep(TrackerRegistration.PEER_TIMEOUT_MSEC / 3);
 
             numFiles = trackerRegistration.registeredPeers[0].files.length;
             if (numFiles > 0) {
                 fileNum = random.nextInt(numFiles);
-                String file = trackerRegistration.registeredPeers[0].files[fileNum];
-                queryMessageReceive = new MessageReceive(Util.GetRandomHighPort(random), acceptedTrackerResponsePacketTypes, false);
-                queryMessageReceive.start();
-                trackerQuery = new TrackerQuery(file, queryMessageReceive.listeningPort);
-                sessionId = random.nextInt();
-                Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Sending TRACKER_QUERY message: Session = " + sessionId + "; Destination = " + trackerPeer.clientIp + ":" + trackerPeer.listeningPort + "; File = " + file + "; Response Expected Port =  " + queryMessageReceive.listeningPort);
-                messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_QUERY, sessionId, trackerQuery.ExportQuery());
+                String filename = trackerRegistration.registeredPeers[0].files[fileNum];
 
-                Thread.sleep(1000);
+                trackerQueryResponse = PerformTrackerQuery(trackerPeer, filename);
 
-                receivedMessageData = queryMessageReceive.GetMessage(sessionId, acceptedTrackerResponsePacketTypes, receivedPeer, receivedPacketType, receivedSessionId);
-                if (receivedMessageData != null) {
-                    trackerQueryResponse = new TrackerQueryResponse();
-                    trackerQueryResponse.ImportResponse(receivedMessageData);
+                // code to test if torrents are being deregistered properly, don't always want
+                // to run since we have to wait for peers to timeout
+                if (false) {
+                    // let everything timeout
+                    Thread.sleep(TrackerRegistration.PEER_TIMEOUT_MSEC * 100 / 99);
 
-                    Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Received TRACKER_RESPONSE (session " + sessionId + ")");
-                    for (Peer listPeer : trackerQueryResponse.peerList) {
-                        Util.DebugPrint(DbgSub.COMPONENT_TESTER, listPeer.clientIp + ":" + listPeer.listeningPort);
-                    }
-                    queryMessageReceive.Stop();
-                } else {
-                    Util.DebugPrint(DbgSub.COMPONENT_TESTER, "FAILED to receive TRACKER_RESPONSE (session " + sessionId + ")");
-                    queryMessageReceive.Stop();
+                    // should have timed out and an empty list returned
+                    trackerQueryResponse = PerformTrackerQuery(trackerPeer, filename);
+
+                    // tracker should have removed the torrent too since nobody is sharing it
+                    Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Tracker state: " + tracker.toString());
                 }
             }
         }
+
+        for (MessageReceive messageReceiver : registeredListeners) {
+            messageReceiver.Stop();
+        }
+
+        tracker.Stop();
+    }
+    
+    private static TrackerQueryResponse PerformTrackerQuery(Peer trackerPeer, String filename) {
+        Random random = new Random();
+        PacketType[] acceptedTrackerResponsePacketTypes = {PacketType.TRACKER_QUERY_RESPONSE};
+        MessageReceive queryMessageReceive = new MessageReceive(Util.GetRandomHighPort(random), acceptedTrackerResponsePacketTypes, false);
+        MessageSend messageSender = new MessageSend();
+        queryMessageReceive.start();
+        TrackerQuery trackerQuery = new TrackerQuery(filename, queryMessageReceive.listeningPort);
+        int sessionId = random.nextInt();
+        Peer[] receivedPeer = new Peer[1];
+        PacketType[] receivedPacketType = new PacketType[1];
+        int[] receivedSessionId = new int[1];
+        byte[] receivedMessageData;
+        TrackerQueryResponse trackerQueryResponse = null;
+
+        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Sending TRACKER_QUERY message: Session = " + sessionId + "; Destination = " + trackerPeer.clientIp + ":" + trackerPeer.listeningPort + "; File = " + filename + "; Response Expected Port =  " + queryMessageReceive.listeningPort);
+        messageSender.SendCommunication(trackerPeer, PacketType.TRACKER_QUERY, sessionId, trackerQuery.ExportQuery());
+
+        try {
+            Thread.sleep(200);
+        } catch (Exception e) {
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Caught exception " + e);
+        }
+
+        receivedMessageData = queryMessageReceive.GetMessage(sessionId, acceptedTrackerResponsePacketTypes, receivedPeer, receivedPacketType, receivedSessionId);
+        if (receivedMessageData != null) {
+            trackerQueryResponse = new TrackerQueryResponse();
+            trackerQueryResponse.ImportResponse(receivedMessageData);
+
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "Received TRACKER_RESPONSE (session " + sessionId + ")");
+            for (Peer listPeer : trackerQueryResponse.peerList) {
+                Util.DebugPrint(DbgSub.COMPONENT_TESTER, listPeer.clientIp + ":" + listPeer.listeningPort);
+            }
+            queryMessageReceive.Stop();
+        } else {
+            Util.DebugPrint(DbgSub.COMPONENT_TESTER, "FAILED to receive TRACKER_RESPONSE (session " + sessionId + ")");
+            queryMessageReceive.Stop();
+        }
+
+        return trackerQueryResponse;
     }
 
     private static void TestListRemovalAlgorithm() {
@@ -454,9 +505,7 @@ public class ComponentTester {
 
     private static void TestTorrent() throws Exception {
         Torrent torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile.txt");
-        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "chunk hashes: " + Util.ConvertToHex(torrent.chunks[0].hash) + " " +
-                Util.ConvertToHex(torrent.chunks[1].hash) + " " + Util.ConvertToHex(torrent.chunks[2].hash) + " " +
-                Util.ConvertToHex(torrent.chunks[3].hash) + " " );
+
         Util.DebugPrint(DbgSub.COMPONENT_TESTER, torrent.toString());
     }
 

@@ -21,6 +21,7 @@ import java.net.*;
  */
 public class Tracker implements Runnable {
     private Thread runner;
+    private volatile boolean stop = false;
     private MessageReceive messageReceiver; // receives messages on the tracker listening port
     private MessageSend messageSender; // all sends are done on the listening thread in response to queries
     private int listeningPort;
@@ -58,7 +59,7 @@ public class Tracker implements Runnable {
         this.messageReceiver = new MessageReceive(this.listeningPort, this.acceptedPacketTypes, true);
         this.messageReceiver.start();
 
-        for (;;) {
+        while (!this.stop) {
             if ((messageData = this.messageReceiver.GetMessage(0, this.acceptedPacketTypes, peer, packetType, sessionID)) != null) {
                 ProcessQuery(peer[0], packetType[0], sessionID[0], messageData);
             } else {
@@ -68,6 +69,11 @@ public class Tracker implements Runnable {
             }
 
         }
+    }
+
+    public void Stop() {
+        this.messageReceiver.Stop();
+        this.stop = true;
     }
 
     /**
@@ -88,6 +94,14 @@ public class Tracker implements Runnable {
 
                     if (peers == null) {
                         peers = new Peer[0];
+
+                        // If nobody is sharing the file, then remove the torrent.
+                        // Peers will periodically try to register it if they are
+                        // sharing it and a query returns an empty peer list.
+                        torrent = this.registeredTorrents.Search(query.filename);
+                        if (torrent != null) {
+                            this.registeredTorrents.DeregisterTorrent(torrent);
+                        }
                     }
 
                     TrackerQueryResponse response = new TrackerQueryResponse(peers);
