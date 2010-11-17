@@ -70,7 +70,7 @@ public class TrackerQueryResponse {
      * Would expect a peer to call this. Initialize an instance from a data byte stream.
      *
      * @param data Byte stream from the wire
-     * @return
+     * @return true if the message was imported successfully, false otherwise
      */
     public boolean ImportResponse(byte[] data) {
         int numberOfPeers = 0;

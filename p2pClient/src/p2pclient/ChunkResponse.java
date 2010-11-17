@@ -1,28 +1,38 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package p2pclient;
 
 /**
+ * This class defines the chunk response message sent from one peer to another
+ * in response to a chunk request message and provides methods for creating
+ * such responses and interpreting them. The structure of the message payload
+ * on the wire is:
+ *
+ * char[] filename; // null-terminated filename
+ * uint32_t chunkNumbers; // chunk number for this response
+ * byte[] data; // chunk data
  *
  * @author Matt
  */
 public class ChunkResponse {
+    /** Filename being requested */
     public String filename;
+    /** Chunk number for this response */
     public int chunkNumber;
+    /** Chunk data */
     byte[] chunkData;
 
-    /*
-     * Description:
-     *   The constructor for the client-end of the response
+    /**
+     * Creates a new chunk list response object. Expected to be called by the
+     * peer receiving the request, followed by a call to ImportMessagePayload().
      */
     ChunkResponse() {}
 
-    /*
-     * Description:
-     *   The constructor for the server-end of the response
+    /**
+     * Creates a new chunk list response object. Expected to be called by the
+     * peer making the request, followed by a call to ExportMessagePayload().
+     *
+     * @param requestedFilename Filename being requested
+     * @param setChunkNumber Chunk number for this response
+     * @param setChunkData Chunk data
      */
     ChunkResponse(String requestedFilename, int setChunkNumber, byte[] setChunkData) {
         chunkData = new byte[setChunkData.length];
@@ -31,12 +41,10 @@ public class ChunkResponse {
         System.arraycopy(setChunkData, 0, chunkData, 0, chunkData.length);
     }
 
-    /*
-     * Description:
-     *   Gets a byte array representation of the response
+    /**
+     * Form a response message
      *
-     * Returns:
-     *   the chunk as a byte array
+     * @return Byte array representing the response message as it should appear on the wire
      */
     public byte[] ExportMessagePayload() {
         //filename, null byte, chunk number, chunk data
@@ -51,9 +59,11 @@ public class ChunkResponse {
         return requestInBytes;
     }
 
-    /*
-     * Description:
-     *   Imports the payload portion of the response
+    /**
+     * Interpret a response message from the on-wire representation. Contents of
+     * response then accessed via the public data members.
+     *
+     * @param data Byte array representing the response message received on the wire
      */
     public void ImportMessagePayload(byte[] data) {
         int[] indexIntoByteArray = {0};

@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package p2pclient;
 
 import java.net.*;
@@ -12,26 +7,44 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Top-level class representing a peer in the p2p system. Responsible for both
+ * client (requesting file chunks from other peers) and server (sending file
+ * chunks to other peers) aspects.
  *
  * @author Matt
  */
 public class Host implements Runnable{
+    /** @todo Unused and can be removed */
     int MAX_NUMBER_FILES = 1024;
+    /** Top-level thread */
     private Thread runner;
+    /** Array of Chunk Managers, one per file being shared or downloaded */
     ChunkManager[] chunkManagers;
+    /** Manages all known peers */
     PeerManager peerManager;
+    /** Array of Requesting Clients (threads and sockets for sending requests and awaiting responses) */
     RequestingClient[] requestingClients;
+    /** Single serving client (single thread and socket) for responding to requests from other peers */
     ServingClient servingClient;
+    /** Port on which the ServingClient is listening */
     int listeningPort;
+    /** Path containing the files being shared */
     String shareFolder;
+    /** Address of the Tracker to connect to */
     InetAddress trackerIP;
 //    boolean isTracker;
 //    Tracker tracker;
+    /** Peer object representing the Tracker */
     Peer peerTracker;
+    /** Time at which we need to re-register out torrents with the Tracker */
     private long torrentBroadcastTimeout;
+    /** Interval at which we need to re-register out torrents with the Tracker */
     public static int TORRENT_BROADCAST_FREQUENCY = 20000; //20 seconds
+    /** Time at which we need to re-register ourself as a peer with the Tracker */
     private long trackerRegistrationBroadcastTimeout;
+    /** Interval at which we need to re-register ourself as a peer with the Tracker */
     public static int TRACKER_REGISTRATION_FREQUENCY = 40000; //40 seconds
+    /** Time we are willing to wait on a response before assuming it is lost */
     public static int SEARCH_TIMEOUT = 10000; //10 seconds
 
     public Host(int servingClientListeningPort, String directory, String trackerIp) throws UnknownHostException {

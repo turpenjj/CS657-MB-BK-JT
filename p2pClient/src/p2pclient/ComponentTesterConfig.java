@@ -1,7 +1,10 @@
 package p2pclient;
 
 /**
+ * Provides configuration information for unit-level testing. Controls which
+ * unit-level tests are run and what types of debug messages are output.
  *
+ * @see ComponentTester
  * @author Jeremy
  */
 public class ComponentTesterConfig {
@@ -34,10 +37,10 @@ public class ComponentTesterConfig {
         false, //    CHUNK_INFO,
         false, //    CHUNK_LIST_REQUEST,
         false, //    CHUNK_LIST_RESPONSE,
-        false, //    CHUNK_MANAGER,
+        true, //    CHUNK_MANAGER,
         false, //    CHUNK_REQUEST,
         false, //    CHUNK_RESPONSE,
-        false, //    COMPONENT_TESTER,
+        true, //    COMPONENT_TESTER,
         false, //    FILE_CHUNK,
         false, //    FILE_RECEIVER,
         false, //    FILE_SENDER,
@@ -50,17 +53,17 @@ public class ComponentTesterConfig {
         false, //    PACKET_TYPE,
         false, //    PEER,
         false, //    PEER_MANAGER,
-        false, //    REGISTERED_PEER,
-        false, //    REQUESTING_CLIENT,
-        false, //    SERVING_CLIENT,
-        false, //    TORRENT,
+        true, //    REGISTERED_PEER,
+        true, //    REQUESTING_CLIENT,
+        true, //    SERVING_CLIENT,
+        true, //    TORRENT,
         false, //    TRACKER,
-        false, //    TRACKER_QUERY,
-        false, //    TRACKER_QUERY_RESPONSE,
+        true, //    TRACKER_QUERY,
+        true, //    TRACKER_QUERY_RESPONSE,
         false, //    TRACKER_REGISTRATION,
-        false, //    TRACKER_TORRENT_QUERY,
+        true, //    TRACKER_TORRENT_QUERY,
         false, //    TRACKER_TORRENT_REGISTRATION,
-        false, //    TRACKER_TORRENT_RESPONSE,
+        true, //    TRACKER_TORRENT_RESPONSE,
         false, //    UTIL
     };
 }

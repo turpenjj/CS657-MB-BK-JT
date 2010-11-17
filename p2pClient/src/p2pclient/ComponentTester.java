@@ -6,6 +6,11 @@ import java.util.Random;
 import java.util.Arrays;
 
 /**
+ * Provides unit-level and higher tests for various other classes in the package.
+ *
+ * @note Which tests get executed is controlled by the configuration values in
+ * ComponentTesterConfig, as well as the path for certain test files used by
+ * these tests.
  *
  * @author Jeremy
  */
@@ -74,6 +79,12 @@ public class ComponentTester {
         }
     }
 
+    /**
+     * Tests the Chunk Manager's ability to write a file once all chunks have
+     * been received.
+     *
+     * @throws Exception
+     */
     private static void TestChunkManagerFileWrite() throws Exception {
         Torrent torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile.txt");
         ChunkManager chunkManager = new ChunkManager(torrent, ComponentTesterConfig.TEST_FILE_PATH_ROOT + File.separator + "OutputFiles");
@@ -93,6 +104,12 @@ public class ComponentTester {
         }
     }
 
+    /**
+     * Tests the MessageSend and MessageReceive ability to send and receive large
+     * messages (made up of more than one packet).
+     *
+     * @throws Exception
+     */
     private static void TestSendReceiveLargeMessages() throws Exception {
         PacketType[] acceptedPeerPacketTypes = {PacketType.CHUNK_RESPONSE};
         MessageReceive messageReceive = new MessageReceive(acceptedPeerPacketTypes, true);
@@ -128,7 +145,12 @@ public class ComponentTester {
 
         messageReceive.Stop();
     }
-    
+
+    /**
+     * Tests the Tracker using real sockets (through MessageSend and MessageReceive).
+     *
+     * @throws Exception
+     */
     private static void TestTrackerWithRealSockets() throws Exception {
         Tracker tracker = new Tracker(Tracker.TRACKER_LISTENING_PORT);
         PacketType[] acceptedPeerPacketTypes = {
@@ -265,7 +287,15 @@ public class ComponentTester {
 
         tracker.Stop();
     }
-    
+
+    /**
+     * Helper function for TestTrackerWithRealSockets. Sends a peer query to
+     * the given tracker and waits for a response.
+     *
+     * @param trackerPeer Tracker to send the request to
+     * @param filename Name of file to search for peers that are sharing it
+     * @return TrackerQueryReponse object representing the response, null if no response received
+     */
     private static TrackerQueryResponse PerformTrackerQuery(Peer trackerPeer, String filename) {
         Random random = new Random();
         PacketType[] acceptedTrackerResponsePacketTypes = {PacketType.TRACKER_QUERY_RESPONSE};
@@ -307,6 +337,11 @@ public class ComponentTester {
         return trackerQueryResponse;
     }
 
+    /**
+     * Tests a code algorithm for removing an element from a list.
+     *
+     * @see RemoveFromList
+     */
     private static void TestListRemovalAlgorithm() {
         Integer[] list = {0, 1, 2, 3, 4, 5};
         Integer[] removeList;
@@ -397,6 +432,14 @@ public class ComponentTester {
         }
     }
 
+    /**
+     * Helper function for TestListRemovalAlgorithm(). Determines if a given integer
+     * is in a list of integers.
+     *
+     * @param integer Integer to search for
+     * @param list List to search through (cannot be null)
+     * @return true if integer was in list, false otherwise
+     */
     private static boolean IsIntegerInList(Integer integer, Integer[] list) {
         for (Integer check : list) {
             if (check.equals(integer)) {
@@ -413,7 +456,7 @@ public class ComponentTester {
      *
      * @param list List to remove from
      * @param listToRemove List to be removed
-     * @return new list with specified elements removed
+     * @return New list with specified elements removed
      */
     private static Integer[] RemoveFromList(Integer[] list, Integer[] listToRemove) {
         int currentIndex = 0;
@@ -433,6 +476,12 @@ public class ComponentTester {
         return list;
     }
 
+    /**
+     * Tests the TrackerTorrentResponse class (generating and interpreting
+     * response messages)
+     *
+     * @throws Exception
+     */
     private static void TestTrackerTorrentQueryResponse() throws Exception {
         Torrent torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile2.txt");
 
@@ -456,6 +505,12 @@ public class ComponentTester {
         }
     }
 
+    /**
+     * Tests the TrackerTorrentQuery class (generating and interpreting query
+     * messages)
+     *
+     * @throws Exception
+     */
     private static void TestTrackerTorrentQuery() throws Exception {
         TrackerTorrentRegistration[] trackerRegisteredTorrents = new TrackerTorrentRegistration[1];
         TrackerTorrentRegistration tracker;
@@ -484,9 +539,10 @@ public class ComponentTester {
     }
 
     /**
-     * Registers a few test torrents with a tracker
+     * Helper function for other tests. Registers a few test torrents with a
+     * TrackerTorrentRegistration object.
      * 
-     * @param TrackerTorrentRegistration[out] Populated with the TrackerTorrentRegistration
+     * @param tracker[out] Populated with the TrackerTorrentRegistration object
      * @return List of torrents registered
      *
      * @throws Exception
@@ -523,6 +579,12 @@ public class ComponentTester {
         return torrents;
     }
 
+    /**
+     * Tests the TrackerTorrentRegistration class (generating and interpreting
+     * torrent registration messages and tracking those registered torrents).
+     *
+     * @throws Exception
+     */
     private static void TestTrackerTorrentRegistration() throws Exception {
         TrackerTorrentRegistration[] trackerRegisteredTorrents = new TrackerTorrentRegistration[1];
         TrackerTorrentRegistration tracker;
@@ -565,12 +627,23 @@ public class ComponentTester {
         }
     }
 
+    /**
+     * Tests the Torrent class.
+     *
+     * @throws Exception
+     */
     private static void TestTorrent() throws Exception {
         Torrent torrent = new Torrent(ComponentTesterConfig.TEST_FILE_PATH_ROOT, "TestFile.txt");
 
         Util.DebugPrint(DbgSub.COMPONENT_TESTER, torrent.toString());
     }
 
+    /**
+     * Tests the TrackerRegistration ability to receive peer registrations and
+     * search through the registered peers.
+     * 
+     * @throws Exception
+     */
     private static void TestTrackerRegistrationImportExport() throws Exception {
         TrackerRegistration trackerRegistration = new TrackerRegistration(21234);
         byte[] messageData;
@@ -664,7 +737,11 @@ public class ComponentTester {
         trackerRegistration.AddFilesFromDirectory(ComponentTesterConfig.TEST_FILE_PATH_ROOT + "EmptyTestFileSet");
         trackerRegistration.AddFilesFromDirectory(ComponentTesterConfig.TEST_FILE_PATH_ROOT + "DirectoryDoesntExist");
     }
-    
+
+    /**
+     * Tests the TrackerQuery class ability to generate and interpret peer query
+     * messages.
+     */
     private static void TestTrackerQueryImportExport() {
         String filename = "Testfilename.ext";
         int listeningPort = 44235;
@@ -685,6 +762,12 @@ public class ComponentTester {
         }
     }
 
+    /**
+     * Tests the TrackerQueryReponse class ability to generate and interpret
+     * peer response messages.
+     * 
+     * @throws Exception
+     */
     private static void TestTrackerQueryResponseImportExport() throws Exception {
         Peer[] peerList = new Peer[10];
         TrackerQueryResponse trackerQueryResponse;
@@ -722,6 +805,9 @@ public class ComponentTester {
 
     }
 
+    /**
+     * Test the Util::ExtractNullTerminatedString function
+     */
     private static void TestUtilExtractNullTerminatedString() {
         String test2 = "Firstteststring" + '\0' + "Secondteststring" + '\0' + "Thirdteststring";
         byte[] test2bytes = test2.getBytes();
@@ -740,7 +826,11 @@ public class ComponentTester {
             }
         }
     }
-    
+
+    /**
+     * Tests the ChunkListRequest class ability to generate and interpret chunk
+     * list request messages.
+     */
     private static void TestChunkListRequestImportExport() {
         String filename = "Testfilename.ext";
         int listeningPort = 44234;
@@ -759,6 +849,10 @@ public class ComponentTester {
                 ", messageData (" + messageData.length + ")");
     }
 
+    /**
+     * Tests the ChunkListResponse class ability to generate and interpret chunk
+     * list response messages.
+     */
     private static void TestChunkListResponseImportExport() {
         String filename = "Testfilename.ext";
         ChunkInfo[] chunkInfoList = new ChunkInfo[5];
@@ -783,6 +877,10 @@ public class ComponentTester {
         }
     }
 
+    /**
+     * Tests the ChunkRequest class ability to generate and interpret chunk
+     * request messages.
+     */
     private static void TestChunkRequestImportExport() {
         String filename = "TestFilename.ext";
         int chunkNumber = 1;
@@ -802,6 +900,10 @@ public class ComponentTester {
                 ", messageData (" + messageData.length + ")");
     }
 
+    /**
+     * Tests the ChunkResponse class ability to generate and interpret chunk
+     * response messages.
+     */
     private static void TestChunkResponseImportExport() {
         String filename = "TestFilename.ext";
         int chunkNumber = 1;
@@ -824,6 +926,9 @@ public class ComponentTester {
                 ", messageData (" + messageData.length + ")");
     }
 
+    /**
+     * Tests the Host class
+     */
     private static void TestHost() {
         try {
             Host newHost = new Host(13454, ComponentTesterConfig.TEST_FILE_PATH_ROOT, InetAddress.getLocalHost().getHostAddress());
@@ -832,6 +937,9 @@ public class ComponentTester {
         }
     }
 
+    /**
+     * Tests the ServingClient class
+     */
     private static void TestServingClient() {
         int listeningPort = 54321;
         ChunkManager[] chunkManagers = new ChunkManager[5];
@@ -882,4 +990,3 @@ public class ComponentTester {
 //        Util.DebugPrint(DbgSub.COMPONENT_TESTER, "peerList (" + peerManager.peerList.length + ")");
     }
 }
-

@@ -64,7 +64,7 @@ public class TrackerQuery {
      * Would expect a peer to call this.
      * 
      * @param data
-     * @return
+     * @return true if the query was imported successfully, false otherwise
      */
     public boolean ImportQuery(byte[] data) {
         byte[] filenameArray;

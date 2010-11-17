@@ -128,9 +128,9 @@ public class MessageReceive implements Runnable {
      *
      * @param filterSessionID SessionID to find message for (0 for don't care)
      * @param filterPacketType Array of acceptable packet types (ignored if filterSessionID is not 0)
-     * @param peer[out]
-     * @param packetType[out]
-     * @param sessionID[out]
+     * @param[out] peer
+     * @param[out] packetType
+     * @param[out] sessionID
      *
      * @return Message data if there was a matching message, NULL otherwise
      */

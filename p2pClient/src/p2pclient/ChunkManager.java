@@ -1,35 +1,36 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package p2pclient;
 
 import java.io.*;
 
 /**
- * Description:
- *  This class is used to manage the chunks that make up a file.  It acts as the gateway between the File and the GUI, the Receiving
- *  Client, and the Serving Client classes
+ * This class is used to manage the chunks that make up a file. It acts as the
+ * gateway between the File and the GUI, the Receiving Client, and the Serving
+ * Client classes.
  *
  * @author Matt
  */
 public class ChunkManager {
+    /** Filename this manager is for */
     public String filename;
+    /** Has the download of this file started? */
     public boolean downloadStarted;
+    /** Component chunks of this file */
     FileChunk[] chunkList;
+    /** Location to write the file to once it has been completely received */
     public String completeFilePath;
 
-    /*
-     * Description:
-     *   The constructr for ChunkManager takes in the filename this ChunkManager
-     *   will be managing.  If the file exists on disc as a complete file, the
-     *   ChunkManager will import all its information from the complete file.
-     *   If a partially complete file is found on disc, the ChunkManager will
-     *   import all available information from the file and the rest of the
-     *   information from the torrent file.  If no file exists on disc, the
-     *   ChunkManager will create a new TrackerRequest object to get the torrent
-     *   from the tracker and create the chunkList based on the torrent.
+    /**
+     * The constructor for ChunkManager takes in the filename this ChunkManager
+     * will be managing.  If the file exists on disc as a complete file, the
+     * ChunkManager will import all its information from the complete file.
+     * If a partially complete file is found on disc, the ChunkManager will
+     * import all available information from the file and the rest of the
+     * information from the torrent file.  If no file exists on disc, the
+     * ChunkManager will create a new TrackerRequest object to get the torrent
+     * from the tracker and create the chunkList based on the torrent.
+     *
+     * @param filename Filename this manager is for
+     * @param completedFilePath Location to write the file to once it has been completely received
      */
     ChunkManager(String filename, String completedFilePath) {
         this.filename = filename;
@@ -37,6 +38,13 @@ public class ChunkManager {
         this.completeFilePath = completedFilePath;
     }
 
+    /**
+     * Constructor to be used for a file to be downloaded after the torrent for
+     * that file is received from the tracker.
+     * 
+     * @param torrent Torrent representing the file this manager is for
+     * @param completedFilePath Location to write the file to once it has been completely received
+     */
     ChunkManager(Torrent torrent, String completedFilePath) {
         this.filename = torrent.filename;
         this.downloadStarted = false;
@@ -52,6 +60,12 @@ public class ChunkManager {
         }
     }
 
+    /**
+     * Determines if this manager is for the given file
+     *
+     * @param filename Filename to check against
+     * @return The chunk manager if it is a match, null otherwise
+     */
     public synchronized ChunkManager FindChunkManager(String filename) {
         if ( this.filename.equals(filename) ) {
             return this;
@@ -59,9 +73,10 @@ public class ChunkManager {
         return null;
     }
 
-    /*
-     * Description:
-     *   Returns an array of ChunkInfo that make up this file
+    /**
+     * Obtain the list of chunks known to the manager
+     *
+     * @return The list of chunks
      */
     public synchronized ChunkInfo[] GetChunkInfo() {
         ChunkInfo[] chunkInfoList = new ChunkInfo[chunkList.length];
@@ -71,28 +86,42 @@ public class ChunkManager {
         return chunkInfoList;
     }
 
-    /*
-     * Description:
-     *   Returns an array of ChunkInfo for all chunks still needed to complete
-     *   the file
+    /**
+     * Obtain the list of chunks that have not yet been received by the manager
+     *
+     * @return The list of chunks
      */
     public synchronized ChunkInfo[] NeededChunks() {
         return GetChunkList(0);
     }
 
+    /**
+     * Obtain the list of chunks that are currently being downloaded by the manager
+     *
+     * @return The list of chunks
+     */
     public synchronized ChunkInfo[] DownloadingChunks() {
         return GetChunkList(1);
     }
 
-    /*
-     * Description:
-     *   Returns an array of ChunkInfo for all chunks that this host already
-     *   has for the file
+    /**
+     * Obtain the list of chunks that have been completely received by the manager
+     *
+     * @return The list of chunks
      */
     public synchronized ChunkInfo[] AvailableChunks() {
         return GetChunkList(2);
     }
 
+    /**
+     * Obtain the list of chunks matching the given status.
+     *
+     * @note Helper function for NeededChunks(), DownloadingChunks(), and AvailableChunks()
+     *
+     * @param status Particular chunk status to match against
+     *
+     * @return The list of chunks
+     */
     private synchronized ChunkInfo[] GetChunkList(int status) {
         ChunkInfo[] chunks = new ChunkInfo[0];
 
@@ -111,9 +140,12 @@ public class ChunkManager {
         return chunks;
     }
 
-    /*
-     * Description:
-     *   Updates the chunk indicated by chunkNumber with the data in chunkData
+    /**
+     * Updates a particular chunk
+     *
+     * @param chunkNumber Chunk number to update
+     * @param chunkData Chunk data
+     * @param receivedFrom Peer the chunk was received from
      */
     public synchronized void UpdateChunk(int chunkNumber, byte[] chunkData, Peer receivedFrom) {
         if ( chunkNumber < chunkList.length ) {
@@ -144,13 +176,22 @@ public class ChunkManager {
         }
     }
 
+    /**
+     * Set the status of a given chunk
+     *
+     * @param chunkNumber Chunk number to update
+     * @param status New status
+     */
     public synchronized void UpdateChunkStatus(int chunkNumber, int status) {
         chunkList[chunkNumber].chunkInfo.status = status;
     }
 
-    /*
-     * Description:
-     *   Returns the data associated with the given chunk
+    /**
+     * Obtain the chunk data for a given chunk
+     *
+     * @param chunkNumber Chunk number to obtain
+     *
+     * @return Byte array representing the chunk data
      */
     public synchronized byte[] GetChunkData(int chunkNumber) {
         if ( chunkNumber < chunkList.length ) {

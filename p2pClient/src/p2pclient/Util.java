@@ -102,7 +102,7 @@ public class Util {
      *
      * @param b Byte array to extract a null-terminated ASCII string from
      * @param startingIndex Index into byte array to start at
-     * @param nextIndex[out] Index into byte array for the first byte following
+     * @param[out] nextIndex Index into byte array for the first byte following
      *      the string's null-terminator (single element array)
      * @return Extracted string, null on failure
      */

@@ -124,7 +124,7 @@ public class TrackerTorrentRegistration {
      * Imports the payload portion of a TRACKER_TORRENT_REGISTRATION message
      * corresponding to a torrent. Expected to be called by the tracker.
      *
-     * @param data Message data payload
+     * @param blob Message data payload
      */
     public void ImportMessagePayload(byte[] blob) {
         int currentIndex = 0;
@@ -201,7 +201,7 @@ public class TrackerTorrentRegistration {
      * Gets a list of all registered torrents.
      *
      * Consider filtering out any stale (nobody is advertising)
-     * @return
+     * @return List of all registered torrents
      */
     public Torrent[] GetAllTorrents() {
         return this.registeredTorrents;

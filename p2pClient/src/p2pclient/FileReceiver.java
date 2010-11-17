@@ -1,15 +1,15 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package p2pclient;
 
 import java.io.*;
 import java.net.*;
 
 /**
+ * Early test class for performing socket read/write operations. Implemented a
+ * simple file receiver that listened for file data packets and wrote the file
+ * to disk.
  *
+ * @see FileSender
+ * 
  * @author Matt
  */
 public class FileReceiver extends Util {

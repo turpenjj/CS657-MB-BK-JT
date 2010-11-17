@@ -1,7 +1,11 @@
 package p2pclient;
 
 /**
- *
+ * Defines the various debug subsystems in the package. Each call to
+ * Util::DebugPrint() takes one of these as an argument and depending on the
+ * configuration specified in ComponentTesterConfig the output may or may not
+ * be displayed.
+ * 
  * @author Jeremy
  */
 public enum DbgSub {

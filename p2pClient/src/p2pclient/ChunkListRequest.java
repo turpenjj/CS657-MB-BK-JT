@@ -1,39 +1,43 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package p2pclient;
 
 /**
+ * This class defines the structure of the chunk list request message sent
+ * between peers and provides methods for creating and interpreting such messages.
+ * The structure of the message payload on the wire is:
+ *
+ * char[] filename; // null-terminated filename
+ * uint32_t listeningPort; // port to send the response to
  *
  * @author Matt
  */
 public class ChunkListRequest {
+    /** Port on which the response to this query should be sent */
     public int receivingPort;
+    /** Filename being queried for */
     public String filename;
 
-    /*
-     * Description:
-     *   The constructor for the client side of the request
+    /**
+     * Creates a new chunk list request object. Expected to be called by the
+     * peer making the request, followed by a call to ExportMessagePayload().
+     *
+     * @param request Filename being queried for
+     * @param port Port on which the response to this query should be sent
      */
     ChunkListRequest(String request, int port) {
         receivingPort = port;
         filename = request;
     }
 
-    /*
-     * Description:
-     *   The constructor for the server side of the request
+    /**
+     * Creates a new chunk list request object. Expected to be called by the
+     * peer receiving the request, followed by a call to ImportMessagePayload().
      */
     ChunkListRequest() {}
 
-    /*
-     * Description:
-     *   Gets a byte array representation of the request
+    /**
+     * Form a request message for this request
      *
-     * Returns:
-     *   the chunk list request as a byte array
+     * @return Byte array representing the request message as it should appear on the wire
      */
     public byte[] ExportMessagePayload() {
         int requestLength = filename.length() + 5; //filename + receiving port
@@ -45,13 +49,14 @@ public class ChunkListRequest {
         return requestInBytes;
     }
 
-    /*
-     * Description:
-     *   Imports the payload portion of the request
+    /**
+     * Interpret a request message from the on-wire representation. Contents of
+     * the request then accessed via the public data members.
+     *
+     * @param data Byte array representing the request message received on the wire
      */
     public void ImportMessagePayload(byte[] data) {
         receivingPort = Util.ByteArrayToInt(data, 0);
         filename = Util.ExtractNullTerminatedString(data, 4, null);
     }
-
 }

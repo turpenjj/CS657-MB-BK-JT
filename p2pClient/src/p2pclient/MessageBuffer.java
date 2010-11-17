@@ -37,9 +37,9 @@ public class MessageBuffer {
     /**
      * Returns the header and message data for this message if it has been completely received
      *
-     * @param peer[out]
-     * @param packetType[out]
-     * @param sessionID[out]
+     * @param[out] peer
+     * @param[out] packetType
+     * @param[out] sessionID
      *
      * @return message data if message is complete (output parameters are valid), null otherwise
      */

@@ -9,6 +9,10 @@ import java.io.*;
 import java.net.*;
 
 /**
+ * Early test class for performing socket read/write operations. Implemented a
+ * simple file sender that sent file data packets out to FileReceiver.
+ *
+ * @see FileReceiver
  *
  * @author Matt
  */
