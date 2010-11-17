@@ -10,8 +10,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 import javax.swing.DefaultListModel;
@@ -319,6 +317,15 @@ public class GUI extends javax.swing.JFrame {
                         model.addRow(new Object[]{torrents[i].filename, torrents[i].filesize, torrents[i].numChunks});
                     }
                     RegisteredTorrentsTable.setModel(model);
+                }
+            }
+
+            File torrentDir = config.GetTorrentDir();
+            if ( torrentDir != null && torrentDir.isDirectory() ) {
+                HostedFilesList.setText(null); // clear list
+                String fileList[] = torrentDir.list();
+                for (int i = 0; i < fileList.length; i++) {
+                    HostedFilesList.append(fileList[i] + "\n");
                 }
             }
         }

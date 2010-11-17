@@ -301,6 +301,9 @@ public class ConfigurationDialog extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_OKButtonActionPerformed
 
+    File GetTorrentDir() {
+        return torrentDir;
+    }
     /**
     * @param args the command line arguments
     */
