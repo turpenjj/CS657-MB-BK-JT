@@ -44,7 +44,7 @@ public class Host implements Runnable{
         trackerIP = InetAddress.getByName(trackerIp);
 //        isTracker = false;
 //        tracker = null;
-       Util.DebugPrint(DbgSub.HOST, trackerIp);
+        Util.DebugPrint(DbgSub.HOST, trackerIp);
         peerTracker = new Peer(this.trackerIP, Tracker.TRACKER_LISTENING_PORT);
         torrentBroadcastTimeout = Util.GetCurrentTime(); //broadcast our torrents when we first spin up
         trackerRegistrationBroadcastTimeout = Util.GetCurrentTime(); //broadcast our registrationg when we first spin up
